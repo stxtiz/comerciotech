@@ -18,6 +18,14 @@ mongoose.connect(
   }
 );
 
+// Log de conexión
+mongoose.connection.on("connected", () => {
+  console.log("Conectado a MongoDB");
+});
+mongoose.connection.on("error", (err) => {
+  console.error("Error conectando a MongoDB:", err);
+});
+
 // CRUD Clientes
 app.get("/api/clientes", async (_, res) => {
   res.json(await Cliente.find());
