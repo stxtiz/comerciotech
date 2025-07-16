@@ -111,7 +111,7 @@ function renderProductos(productos) {
   ul.innerHTML = "";
   productos.forEach((p) => {
     const li = document.createElement("li");
-    li.textContent = `${p.nombre} - ${p.categoria} - $${p.precio} (${p.stock} en stock)`;
+    li.textContent = `${p.nombre} - ${p.categoría} - $${p.precio} (${p.stock} en stock)`;
     const editBtn = document.createElement("button");
     editBtn.textContent = "Editar";
     editBtn.onclick = () => editProducto(p);
@@ -133,11 +133,11 @@ async function loadProductos() {
 function editProducto(producto) {
   document.getElementById("producto-id").value = producto._id;
   document.getElementById("producto-nombre").value = producto.nombre;
-  document.getElementById("producto-descripcion").value = producto.descripcion;
-  document.getElementById("producto-categoria").value = producto.categoria;
+  document.getElementById("producto-descripcion").value = producto.descripción;
+  document.getElementById("producto-categoria").value = producto.categoría;
   document.getElementById("producto-precio").value = producto.precio;
   document.getElementById("producto-stock").value = producto.stock;
-  document.getElementById("producto-imagen").value = producto.url_imagen;
+  document.getElementById("producto-imagen").value = producto.imagen;
 }
 
 async function deleteProducto(id) {
@@ -152,19 +152,19 @@ async function submitProductoForm(e) {
   const form = e.target;
   const id = form["producto-id"].value;
   const nombre = form["producto-nombre"].value;
-  const descripcion = form["producto-descripcion"].value;
-  const categoria = form["producto-categoria"].value;
+  const descripción = form["producto-descripcion"].value; // con tilde
+  const categoría = form["producto-categoria"].value; // con tilde
   const precio = Number(form["producto-precio"].value);
   const stock = Number(form["producto-stock"].value);
-  const url_imagen = form["producto-imagen"].value;
+  const imagen = form["producto-imagen"].value; // cambia a 'imagen'
 
   const data = {
     nombre,
-    descripcion,
-    categoria,
+    descripción,
+    categoría,
     precio,
     stock,
-    url_imagen,
+    imagen,
   };
 
   if (id) {
