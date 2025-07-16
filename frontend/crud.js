@@ -1,51 +1,61 @@
+// URL base de la API (ajusta si es necesario)
 const API = "/api";
 
-document.addEventListener("DOMContentLoaded", () => {
-  // Clientes
-  const clienteForm = document.getElementById("cliente-form");
-  const cancelClienteBtn = document.getElementById("cancelar-edicion-cliente");
-  clienteForm.addEventListener("submit", submitClienteForm);
-  cancelClienteBtn.addEventListener("click", () => resetForm(clienteForm));
-  loadClientes();
+window._clientes = [];
+window._productos = [];
+window._pedidos = [];
 
-  // Productos
-  const productoForm = document.getElementById("producto-form");
-  const cancelProductoBtn = document.getElementById(
-    "cancelar-edicion-producto"
-  );
-  productoForm.addEventListener("submit", submitProductoForm);
-  cancelProductoBtn.addEventListener("click", () => resetForm(productoForm));
-  loadProductos();
+/* ========================= CLIENTES ========================= */
+function renderClientes(clientes) {
+  const ul = document.getElementById("clientes-list");
+  ul.innerHTML = "";
+  clientes.forEach((c) => {
+    const li = document.createElement("li");
+    li.textContent = `${c.nombre} (${c.correo}) - ${c.dirección}, ${c.teléfono}`;
+    const editBtn = document.createElement("button");
+    editBtn.textContent = "Editar";
+    editBtn.onclick = () => editCliente(c);
+    const delBtn = document.createElement("button");
+    delBtn.textContent = "Eliminar";
+    delBtn.onclick = () => deleteCliente(c._id);
+    li.append(" ", editBtn, delBtn);
+    ul.appendChild(li);
+  });
+}
 
-  // Pedidos
-  const pedidoForm = document.getElementById("pedido-form");
-  const cancelPedidoBtn = document.getElementById("cancelar-edicion-pedido");
-  pedidoForm.addEventListener("submit", submitPedidoForm);
-  cancelPedidoBtn.addEventListener("click", () => resetForm(pedidoForm));
-  document
-    .getElementById("agregar-producto-al-pedido")
-    .addEventListener("click", addProductoToPedido);
-  loadPedidos();
-  cargarSelectClientes();
-  cargarProductosEnPedido();
-});
+async function loadClientes() {
+  const res = await fetch(`${API}/clientes`);
+  const clientes = await res.json();
+  window._clientes = clientes;
+  renderClientes(clientes);
+  renderClientesSelect(clientes);
+}
 
-// ----- Clientes CRUD -----
-function loadClientes() {
-  fetch(`${API}/clientes`)
-    .then((r) => r.json())
-    .then((clientes) => {
-      const ul = document.getElementById("clientes-list");
-      ul.innerHTML = "";
-      clientes.forEach((c) => {
-        const li = document.createElement("li");
-        li.textContent = `${c.nombre} (${c.correo}) - ${c.dirección} - ${c.teléfono}`;
-        li.innerHTML += ` <button onclick="editCliente('${c._id}')">Editar</button> <button onclick="deleteCliente('${c._id}')">Eliminar</button>`;
-        ul.appendChild(li);
-      });
-      window._clientes = clientes;
-      cargarSelectClientes();
-    });
+function renderClientesSelect(clientes) {
+  const select = document.getElementById("pedido-cliente");
+  select.innerHTML = "";
+  clientes.forEach((c) => {
+    const option = document.createElement("option");
+    option.value = c._id;
+    option.textContent = c.nombre;
+    select.appendChild(option);
+  });
+}
+
+function editCliente(cliente) {
+  document.getElementById("cliente-id").value = cliente._id;
+  document.getElementById("cliente-nombre").value = cliente.nombre;
+  document.getElementById("cliente-correo").value = cliente.correo;
+  document.getElementById("cliente-direccion").value = cliente.dirección;
+  document.getElementById("cliente-telefono").value = cliente.teléfono;
+  // No rellenar el campo de contraseña por seguridad
+}
+
+async function deleteCliente(id) {
+  if (confirm("¿Eliminar cliente?")) {
+    await fetch(`${API}/clientes/${id}`, { method: "DELETE" });
+    loadClientes();
+  }
 }
 
 async function submitClienteForm(e) {
@@ -58,14 +68,16 @@ async function submitClienteForm(e) {
   const teléfono = form["cliente-telefono"].value;
   const password = form["cliente-password"].value;
 
-  let contraseña_cifrada = window._last_client_password_hash || "";
+  let contraseña_cifrada = "";
 
+  // Si hay password, cifrar con bcryptjs (en el navegador)
   if (password) {
     const salt = bcrypt.genSaltSync(10);
     contraseña_cifrada = bcrypt.hashSync(password, salt);
   } else if (id) {
+    // Si es edición y no se cambió la password, mantener la anterior
     const cliente = window._clientes.find((cli) => cli._id == id);
-    if (cliente) contraseña_cifrada = cliente.contraseña_cifrada;
+    if (cliente) contraseña_cifrada = cliente.contraseña_cifrada || "";
   }
 
   const data = {
@@ -77,292 +89,208 @@ async function submitClienteForm(e) {
   };
 
   if (id) {
-    fetch(`${API}/clientes/${id}`, {
+    await fetch(`${API}/clientes/${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
-    }).then(() => {
-      loadClientes();
-      resetForm(form);
     });
   } else {
-    fetch(`${API}/clientes`, {
+    await fetch(`${API}/clientes`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
-    }).then(() => {
-      loadClientes();
-      resetForm(form);
     });
   }
-  window._last_client_password_hash = "";
+  loadClientes();
+  resetForm(form);
 }
 
-function editCliente(id) {
-  const c = window._clientes.find((cli) => cli._id == id);
-  if (!c) return;
-  document.getElementById("cliente-id").value = c._id;
-  document.getElementById("cliente-nombre").value = c.nombre;
-  document.getElementById("cliente-correo").value = c.correo;
-  document.getElementById("cliente-direccion").value = c.dirección;
-  document.getElementById("cliente-telefono").value = c.teléfono;
-  document.getElementById("cliente-password").value = "";
-  window._last_client_password_hash = c.contraseña_cifrada;
-}
-
-function deleteCliente(id) {
-  if (confirm("¿Eliminar cliente?"))
-    fetch(`${API}/clientes/${id}`, { method: "DELETE" }).then(loadClientes);
-}
-
-function cargarSelectClientes() {
-  const select = document.getElementById("pedido-cliente");
-  if (!select) return;
-  const clientes = window._clientes || [];
-  select.innerHTML = '<option value="">-- Selecciona Cliente --</option>';
-  clientes.forEach((c) => {
-    select.innerHTML += `<option value="${c._id}">${c.nombre}</option>`;
+/* ========================= PRODUCTOS ========================= */
+function renderProductos(productos) {
+  const ul = document.getElementById("productos-list");
+  ul.innerHTML = "";
+  productos.forEach((p) => {
+    const li = document.createElement("li");
+    li.textContent = `${p.nombre} - ${p.categoria} - $${p.precio} (${p.stock} en stock)`;
+    const editBtn = document.createElement("button");
+    editBtn.textContent = "Editar";
+    editBtn.onclick = () => editProducto(p);
+    const delBtn = document.createElement("button");
+    delBtn.textContent = "Eliminar";
+    delBtn.onclick = () => deleteProducto(p._id);
+    li.append(" ", editBtn, delBtn);
+    ul.appendChild(li);
   });
 }
 
-// ----- Productos CRUD -----
-function loadProductos() {
-  fetch(`${API}/productos`)
-    .then((r) => r.json())
-    .then((productos) => {
-      const ul = document.getElementById("productos-list");
-      ul.innerHTML = "";
-      productos.forEach((p) => {
-        const li = document.createElement("li");
-        li.textContent = `${p.nombre} (${p.categoría}) - $${p.precio} - Stock:${p.stock}`;
-        li.innerHTML += ` <button onclick="editProducto('${p._id}')">Editar</button> <button onclick="deleteProducto('${p._id}')">Eliminar</button>`;
-        ul.appendChild(li);
-      });
-      window._productos = productos;
-      cargarProductosEnPedido();
-    });
+async function loadProductos() {
+  const res = await fetch(`${API}/productos`);
+  const productos = await res.json();
+  window._productos = productos;
+  renderProductos(productos);
 }
 
-function submitProductoForm(e) {
-  e.preventDefault();
-  const form = e.target;
-  const data = {
-    nombre: form["producto-nombre"].value,
-    descripción: form["producto-descripcion"].value,
-    categoría: form["producto-categoria"].value,
-    precio: Number(form["producto-precio"].value),
-    stock: Number(form["producto-stock"].value),
-    imagen: form["producto-imagen"].value,
-  };
-  const id = form["producto-id"].value;
-  if (id) {
-    fetch(`${API}/productos/${id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
-    }).then(() => {
-      loadProductos();
-      resetForm(form);
-    });
-  } else {
-    fetch(`${API}/productos`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
-    }).then(() => {
-      loadProductos();
-      resetForm(form);
-    });
+function editProducto(producto) {
+  document.getElementById("producto-id").value = producto._id;
+  document.getElementById("producto-nombre").value = producto.nombre;
+  document.getElementById("producto-descripcion").value = producto.descripcion;
+  document.getElementById("producto-categoria").value = producto.categoria;
+  document.getElementById("producto-precio").value = producto.precio;
+  document.getElementById("producto-stock").value = producto.stock;
+  document.getElementById("producto-imagen").value = producto.url_imagen;
+}
+
+async function deleteProducto(id) {
+  if (confirm("¿Eliminar producto?")) {
+    await fetch(`${API}/productos/${id}`, { method: "DELETE" });
+    loadProductos();
   }
 }
 
-function editProducto(id) {
-  const p = window._productos.find((prod) => prod._id == id);
-  if (!p) return;
-  document.getElementById("producto-id").value = p._id;
-  document.getElementById("producto-nombre").value = p.nombre;
-  document.getElementById("producto-descripcion").value = p.descripción;
-  document.getElementById("producto-categoria").value = p.categoría;
-  document.getElementById("producto-precio").value = p.precio;
-  document.getElementById("producto-stock").value = p.stock;
-  document.getElementById("producto-imagen").value = p.imagen;
-}
+async function submitProductoForm(e) {
+  e.preventDefault();
+  const form = e.target;
+  const id = form["producto-id"].value;
+  const nombre = form["producto-nombre"].value;
+  const descripcion = form["producto-descripcion"].value;
+  const categoria = form["producto-categoria"].value;
+  const precio = Number(form["producto-precio"].value);
+  const stock = Number(form["producto-stock"].value);
+  const url_imagen = form["producto-imagen"].value;
 
-function deleteProducto(id) {
-  if (confirm("¿Eliminar producto?"))
-    fetch(`${API}/productos/${id}`, { method: "DELETE" }).then(loadProductos);
-}
+  const data = {
+    nombre,
+    descripcion,
+    categoria,
+    precio,
+    stock,
+    url_imagen,
+  };
 
-function cargarProductosEnPedido() {
-  window._productos = window._productos || [];
-  window._pedidos_productos = window._pedidos_productos || [];
-  renderPedidoProductosInputs();
-}
-
-// ----- Pedidos CRUD -----
-function loadPedidos() {
-  fetch(`${API}/pedidos`)
-    .then((r) => r.json())
-    .then((pedidos) => {
-      const ul = document.getElementById("pedidos-list");
-      ul.innerHTML = "";
-      pedidos.forEach((ped) => {
-        const cliente = ped.cliente_id
-          ? ped.cliente_id.nombre || ped.cliente_id
-          : "";
-        const fecha = ped.fecha ? new Date(ped.fecha).toLocaleDateString() : "";
-        const productos = (ped.productos || [])
-          .map((pp) => {
-            const nombre = pp.producto_id
-              ? pp.producto_id.nombre || pp.producto_id
-              : "";
-            return `${nombre} x${pp.cantidad} ($${pp.precio_unitario})`;
-          })
-          .join(", ");
-        const li = document.createElement("li");
-        li.textContent = `De: ${cliente} - Fecha: ${fecha} - Total: $${ped.total} - Estado: ${ped.estado} - Productos: ${productos}`;
-        li.innerHTML += ` <button onclick="editPedido('${ped._id}')">Editar</button> <button onclick="deletePedido('${ped._id}')">Eliminar</button>`;
-        ul.appendChild(li);
-      });
-      window._pedidos = pedidos;
+  if (id) {
+    await fetch(`${API}/productos/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
     });
+  } else {
+    await fetch(`${API}/productos`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+  }
+  loadProductos();
+  resetForm(form);
 }
 
-function submitPedidoForm(e) {
+/* ========================= PEDIDOS ========================= */
+function renderPedidos(pedidos) {
+  const ul = document.getElementById("pedidos-list");
+  ul.innerHTML = "";
+  pedidos.forEach((p) => {
+    const li = document.createElement("li");
+    li.textContent = `Cliente: ${p.cliente?.nombre || p.cliente} | Fecha: ${
+      p.fecha
+    } | Total: $${p.total} | Estado: ${p.estado}`;
+    const editBtn = document.createElement("button");
+    editBtn.textContent = "Editar";
+    editBtn.onclick = () => editPedido(p);
+    const delBtn = document.createElement("button");
+    delBtn.textContent = "Eliminar";
+    delBtn.onclick = () => deletePedido(p._id);
+    li.append(" ", editBtn, delBtn);
+    ul.appendChild(li);
+  });
+}
+
+async function loadPedidos() {
+  const res = await fetch(`${API}/pedidos`);
+  const pedidos = await res.json();
+  window._pedidos = pedidos;
+  renderPedidos(pedidos);
+}
+
+function editPedido(pedido) {
+  document.getElementById("pedido-id").value = pedido._id;
+  document.getElementById("pedido-cliente").value =
+    pedido.cliente?._id || pedido.cliente;
+  document.getElementById("pedido-fecha").value = pedido.fecha;
+  document.getElementById("pedido-total").value = pedido.total;
+  document.getElementById("pedido-estado").value = pedido.estado;
+  // Aquí podrías rellenar los productos del pedido si tienes UI para ello
+}
+
+async function deletePedido(id) {
+  if (confirm("¿Eliminar pedido?")) {
+    await fetch(`${API}/pedidos/${id}`, { method: "DELETE" });
+    loadPedidos();
+  }
+}
+
+async function submitPedidoForm(e) {
   e.preventDefault();
   const form = e.target;
   const id = form["pedido-id"].value;
-  const productos = window._pedidos_productos || [];
+  const cliente = form["pedido-cliente"].value;
+  const fecha = form["pedido-fecha"].value;
+  const total = Number(form["pedido-total"].value);
+  const estado = form["pedido-estado"].value;
+  // Productos del pedido: se puede implementar
+  const productos = []; // Implementa según tu UI
+
   const data = {
-    cliente_id: Number(form["pedido-cliente"].value),
-    fecha: form["pedido-fecha"].value,
-    total: Number(form["pedido-total"].value),
-    estado: form["pedido-estado"].value,
-    productos: productos,
+    cliente,
+    fecha,
+    total,
+    estado,
+    productos,
   };
+
   if (id) {
-    fetch(`${API}/pedidos/${id}`, {
+    await fetch(`${API}/pedidos/${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
-    }).then(() => {
-      loadPedidos();
-      resetForm(form);
     });
   } else {
-    fetch(`${API}/pedidos`, {
+    await fetch(`${API}/pedidos`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
-    }).then(() => {
-      loadPedidos();
-      resetForm(form);
     });
   }
-  window._pedidos_productos = [];
-  renderPedidoProductosInputs();
+  loadPedidos();
+  resetForm(form);
 }
 
-function editPedido(id) {
-  const p = window._pedidos.find((ped) => ped._id == id);
-  if (!p) return;
-  document.getElementById("pedido-id").value = p._id;
-  document.getElementById("pedido-cliente").value = p.cliente_id
-    ? p.cliente_id._id
-    : "";
-  document.getElementById("pedido-fecha").value = p.fecha
-    ? p.fecha.substr(0, 10)
-    : "";
-  document.getElementById("pedido-total").value = p.total;
-  document.getElementById("pedido-estado").value = p.estado;
-  window._pedidos_productos = (p.productos || []).map((pp) => ({
-    producto_id: pp.producto_id?._id || pp.producto_id,
-    cantidad: pp.cantidad,
-    precio_unitario: pp.precio_unitario,
-  }));
-  renderPedidoProductosInputs();
-}
-
-function deletePedido(id) {
-  if (confirm("¿Eliminar pedido?"))
-    fetch(`${API}/pedidos/${id}`, { method: "DELETE" }).then(loadPedidos);
-}
-
-function addProductoToPedido() {
-  window._productos = window._productos || [];
-  window._pedidos_productos = window._pedidos_productos || [];
-  const producto_id = window._productos[0]?._id || "";
-  window._pedidos_productos.push({
-    producto_id,
-    cantidad: 1,
-    precio_unitario: 0,
-  });
-  renderPedidoProductosInputs();
-}
-
-function renderPedidoProductosInputs() {
-  const wrapper = document.getElementById("pedido-productos-wrapper");
-  wrapper.innerHTML = "";
-  (window._pedidos_productos || []).forEach((pp, idx) => {
-    const select = document.createElement("select");
-    select.name = `producto_id_${idx}`;
-    window._productos.forEach((p) => {
-      const opt = document.createElement("option");
-      opt.value = p._id;
-      opt.textContent = p.nombre;
-      if (p._id == pp.producto_id) opt.selected = true;
-      select.appendChild(opt);
-    });
-    select.addEventListener("change", (e) => {
-      window._pedidos_productos[idx].producto_id = Number(e.target.value);
-    });
-
-    const cantidad = document.createElement("input");
-    cantidad.type = "number";
-    cantidad.min = "1";
-    cantidad.value = pp.cantidad;
-    cantidad.addEventListener("input", (e) => {
-      window._pedidos_productos[idx].cantidad = Number(e.target.value);
-    });
-
-    const precio = document.createElement("input");
-    precio.type = "number";
-    precio.min = "0";
-    precio.value = pp.precio_unitario;
-    precio.placeholder = "Precio unitario";
-    precio.addEventListener("input", (e) => {
-      window._pedidos_productos[idx].precio_unitario = Number(e.target.value);
-    });
-
-    const btnQuitar = document.createElement("button");
-    btnQuitar.type = "button";
-    btnQuitar.textContent = "Quitar";
-    btnQuitar.addEventListener("click", () => {
-      window._pedidos_productos.splice(idx, 1);
-      renderPedidoProductosInputs();
-    });
-
-    const div = document.createElement("div");
-    div.appendChild(select);
-    div.appendChild(cantidad);
-    div.appendChild(precio);
-    div.appendChild(btnQuitar);
-
-    wrapper.appendChild(div);
-  });
-}
-
-// ----- Utilidad -----
+/* ========== UTILITARIOS ========== */
 function resetForm(form) {
   form.reset();
   if (form["cliente-id"]) form["cliente-id"].value = "";
   if (form["producto-id"]) form["producto-id"].value = "";
-  if (form["pedido-id"]) {
-    form["pedido-id"].value = "";
-    window._pedidos_productos = [];
-    renderPedidoProductosInputs();
-  }
+  if (form["pedido-id"]) form["pedido-id"].value = "";
+}
+
+/* ========== EVENTOS ========== */
+document.getElementById("cliente-form").onsubmit = submitClienteForm;
+document.getElementById("cancelar-edicion-cliente").onclick = function () {
+  resetForm(document.getElementById("cliente-form"));
+};
+
+document.getElementById("producto-form").onsubmit = submitProductoForm;
+document.getElementById("cancelar-edicion-producto").onclick = function () {
+  resetForm(document.getElementById("producto-form"));
+};
+
+document.getElementById("pedido-form").onsubmit = submitPedidoForm;
+document.getElementById("cancelar-edicion-pedido").onclick = function () {
+  resetForm(document.getElementById("pedido-form"));
+};
+
+/* ========== INICIALIZACIÓN ========== */
+window.onload = function () {
   loadClientes();
   loadProductos();
   loadPedidos();
-}
+};
