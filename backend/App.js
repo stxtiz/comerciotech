@@ -9,10 +9,14 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-mongoose.connect("mongodb://localhost:27017/comerciotech", {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-});
+mongoose.connect(
+  "mongodb://myUserAdmin:Ventana#123@localhost:27017/comerciotech",
+  {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+    authSource: "admin",
+  }
+);
 
 // CRUD Clientes
 app.get("/api/clientes", async (_, res) => {
