@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <title>ComercioTech - CRUD Dashboard</title>
+    <link rel="stylesheet" href="style.css" />
+    <!-- Incluye bcryptjs para el cifrado de contraseñas en el frontend -->
+    <script src="https://cdn.jsdelivr.net/npm/bcryptjs@2.4.3/dist/bcrypt.min.js"></script>
+  </head>
+  <body>
+    <h1>ComercioTech - CRUD Dashboard</h1>
+
+    <section>
+      <h2>Clientes</h2>
+      <form id="cliente-form">
+        <input type="hidden" id="cliente-id" />
+        <input type="text" id="cliente-nombre" placeholder="Nombre" required />
+        <input type="email" id="cliente-correo" placeholder="Correo" required />
+        <input
+          type="text"
+          id="cliente-direccion"
+          placeholder="Dirección"
+          required
+        />
+        <input
+          type="text"
+          id="cliente-telefono"
+          placeholder="Teléfono"
+          required
+        />
+        <input
+          type="password"
+          id="cliente-password"
+          placeholder="Contraseña"
+          autocomplete="new-password"
+          required
+        />
+        <button type="submit">Guardar Cliente</button>
+        <button type="button" id="cancelar-edicion-cliente">Cancelar</button>
+      </form>
+      <ul id="clientes-list"></ul>
+    </section>
+
+    <section>
+      <h2>Productos</h2>
+      <form id="producto-form">
+        <input type="hidden" id="producto-id" />
+        <input type="text" id="producto-nombre" placeholder="Nombre" required />
+        <input
+          type="text"
+          id="producto-descripcion"
+          placeholder="Descripción"
+          required
+        />
+        <input
+          type="text"
+          id="producto-categoria"
+          placeholder="Categoría"
+          required
+        />
+        <input
+          type="number"
+          id="producto-precio"
+          placeholder="Precio"
+          required
+        />
+        <input type="number" id="producto-stock" placeholder="Stock" required />
+        <input type="text" id="producto-imagen" placeholder="URL Imagen" />
+        <button type="submit">Guardar Producto</button>
+        <button type="button" id="cancelar-edicion-producto">Cancelar</button>
+      </form>
+      <ul id="productos-list"></ul>
+    </section>
+
+    <section>
+      <h2>Pedidos</h2>
+      <form id="pedido-form">
+        <input type="hidden" id="pedido-id" />
+        <select id="pedido-cliente" required></select>
+        <input type="date" id="pedido-fecha" required />
+        <input type="number" id="pedido-total" placeholder="Total" required />
+        <input type="text" id="pedido-estado" placeholder="Estado" required />
+        <div id="pedido-productos-wrapper"></div>
+        <button type="button" id="agregar-producto-al-pedido">
+          Agregar Producto
+        </button>
+        <button type="submit">Guardar Pedido</button>
+        <button type="button" id="cancelar-edicion-pedido">Cancelar</button>
+      </form>
+      <ul id="pedidos-list"></ul>
+    </section>
+
+    <script src="crud.js"></script>
+  </body>
+</html>

@@ -1,0 +1,9 @@
+[{
+  "_id": 1,
+  "nombre": "Producto Z",
+  "descripción": "Descripción del Producto Z",
+  "categoría": "Categoría 1",
+  "precio": 100,
+  "stock": 50,
+  "imagen": ""
+}]

@@ -1,0 +1,8 @@
+[{
+  "_id": 1,
+  "nombre": "Juan Pérez",
+  "correo": "juan.perez@chile.com",
+  "dirección": "Calle Falsa 123",
+  "teléfono": "123456789",
+  "contraseña_cifrada": "e234dsdom3k2kmdl3l43iwes9vjro44223m3n32kn5n2ksdo4"
+}]
