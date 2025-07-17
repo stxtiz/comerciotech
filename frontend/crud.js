@@ -80,10 +80,23 @@ async function submitClienteForm(e) {
 
   let contraseña_cifrada = "";
 
+  // Verificar que bcrypt esté disponible
+  if (typeof bcrypt === 'undefined') {
+    alert('Error: La biblioteca de cifrado no está disponible. Recarga la página.');
+    console.error('bcrypt no está definido. Verifica que la biblioteca esté cargada.');
+    return;
+  }
+
   // Si hay password, cifrar con bcryptjs (en el navegador)
   if (password) {
-    const salt = bcrypt.genSaltSync(10);
-    contraseña_cifrada = bcrypt.hashSync(password, salt);
+    try {
+      const salt = bcrypt.genSaltSync(10);
+      contraseña_cifrada = bcrypt.hashSync(password, salt);
+    } catch (error) {
+      console.error('Error al cifrar la contraseña:', error);
+      alert('Error al procesar la contraseña. Inténtalo de nuevo.');
+      return;
+    }
   } else if (id) {
     // Si es edición y no se cambió la password, mantener la anterior
     const cliente = window._clientes.find((cli) => cli._id == id);
@@ -359,6 +372,15 @@ document.getElementById("cancelar-edicion-pedido").onclick = function () {
 
 /* ========== INICIALIZACIÓN ========== */
 window.onload = function () {
+  // Verificar que bcrypt esté disponible
+  if (typeof bcrypt === 'undefined') {
+    console.error('❌ bcrypt no está disponible. Verifica la conexión a internet y recarga la página.');
+    alert('Error: No se pudo cargar la biblioteca de cifrado. Verifica tu conexión a internet y recarga la página.');
+    return;
+  } else {
+    console.log('✅ bcrypt cargado correctamente');
+  }
+  
   loadClientes();
   loadProductos();
   loadPedidos();
