@@ -199,7 +199,7 @@ function renderProductos(productos) {
 
     tr.innerHTML = `
       <td>
-        <img src="${p.imagen || "https://via.placeholder.com/50?text=No+Img"}" 
+        <img src="${p.imagen ? `${API}${p.imagen}` : "https://via.placeholder.com/50?text=No+Img"}" 
              alt="${p.nombre}" class="producto-img" 
              onerror="this.src='https://via.placeholder.com/50?text=No+Img'">
       </td>
@@ -252,7 +252,20 @@ function editProducto(producto) {
   document.getElementById("producto-categoria").value = producto.categoría;
   document.getElementById("producto-precio").value = producto.precio;
   document.getElementById("producto-stock").value = producto.stock;
-  document.getElementById("producto-imagen").value = producto.imagen || "";
+  
+  // Limpiar el input de archivo (no se puede preseleccionar archivos por seguridad)
+  document.getElementById("producto-imagen").value = "";
+  
+  // Mostrar imagen actual si existe
+  const imagenPreview = document.getElementById("imagen-preview");
+  const imagenActual = document.getElementById("imagen-actual");
+  
+  if (producto.imagen) {
+    imagenActual.src = `${API}${producto.imagen}`;
+    imagenPreview.classList.remove("d-none");
+  } else {
+    imagenPreview.classList.add("d-none");
+  }
 }
 
 async function deleteProducto(id) {
@@ -271,28 +284,37 @@ async function submitProductoForm(e) {
   e.preventDefault();
   const form = e.target;
   const id = form["producto-id"].value;
-  const data = {
-    nombre: form["producto-nombre"].value,
-    descripción: form["producto-descripcion"].value,
-    categoría: form["producto-categoria"].value,
-    precio: Number(form["producto-precio"].value),
-    stock: Number(form["producto-stock"].value),
-    imagen: form["producto-imagen"].value || null,
-  };
+  
+  // Usar FormData para enviar archivos
+  const formData = new FormData();
+  formData.append('nombre', form["producto-nombre"].value);
+  formData.append('descripcion', form["producto-descripcion"].value);
+  formData.append('categoria', form["producto-categoria"].value);
+  formData.append('precio', Number(form["producto-precio"].value));
+  formData.append('stock', Number(form["producto-stock"].value));
+  
+  // Agregar archivo de imagen si existe
+  const imagenFile = form["producto-imagen"].files[0];
+  if (imagenFile) {
+    formData.append('imagen', imagenFile);
+  }
+
+  // Si es edición, agregar el ID
+  if (id) {
+    formData.append('producto_id', id);
+  }
 
   try {
     let response;
     if (id) {
       response = await fetch(`${API}/productos/${id}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: formData, // No incluir Content-Type header para FormData
       });
     } else {
       response = await fetch(`${API}/productos`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: formData, // No incluir Content-Type header para FormData
       });
     }
 
@@ -305,6 +327,8 @@ async function submitProductoForm(e) {
 
     await loadProductos();
     resetForm(form);
+    // Limpiar preview de imagen
+    document.getElementById("imagen-preview").classList.add("d-none");
     alert(
       id
         ? "Producto actualizado correctamente"
@@ -752,6 +776,8 @@ function resetForm(form) {
   if (form.id === "producto-form") {
     document.getElementById("producto-form-title").innerHTML =
       '<i class="bi bi-box-seam-fill me-2"></i>Agregar Producto';
+    // Ocultar preview de imagen
+    document.getElementById("imagen-preview").classList.add("d-none");
   }
   if (form.id === "pedido-form") {
     document.getElementById("pedido-form-title").innerHTML =

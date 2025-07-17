@@ -2,6 +2,9 @@ const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 const bcrypt = require("bcryptjs");
+const multer = require("multer");
+const path = require("path");
+const fs = require("fs");
 const Cliente = require("./models/Cliente");
 const Producto = require("./models/Producto");
 const Pedido = require("./models/Pedido");
@@ -9,6 +12,45 @@ const Pedido = require("./models/Pedido");
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+// Crear directorio de uploads si no existe
+const uploadsDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
+// Servir archivos estáticos (imágenes)
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// Configuración de Multer para subida de archivos
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, uploadsDir);
+  },
+  filename: function (req, file, cb) {
+    // Generar nombre único con ID del producto
+    const productId = req.body.producto_id || Date.now();
+    const extension = path.extname(file.originalname);
+    cb(null, `producto_${productId}_${Date.now()}${extension}`);
+  }
+});
+
+// Filtro para solo permitir imágenes
+const fileFilter = (req, file, cb) => {
+  if (file.mimetype.startsWith('image/')) {
+    cb(null, true);
+  } else {
+    cb(new Error('Solo se permiten archivos de imagen'), false);
+  }
+};
+
+const upload = multer({ 
+  storage: storage,
+  fileFilter: fileFilter,
+  limits: {
+    fileSize: 5 * 1024 * 1024 // 5MB máximo
+  }
+});
 
 mongoose.connect(
   "mongodb://myUserAdmin:Ventana%23123@localhost:27017/comerciotech",
@@ -111,26 +153,85 @@ app.get("/api/productos", async (_, res) => {
   }
 });
 
-app.post("/api/productos", async (req, res) => {
+app.post("/api/productos", upload.single('imagen'), async (req, res) => {
   try {
+    const { nombre, precio, categoria, stock } = req.body;
+    
     // Generar ID automáticamente si no existe
+    let productoId;
     if (!req.body._id) {
       const lastProducto = await Producto.findOne().sort({ _id: -1 });
-      req.body._id = lastProducto ? lastProducto._id + 1 : 1;
+      productoId = lastProducto ? lastProducto._id + 1 : 1;
+    } else {
+      productoId = req.body._id;
     }
-    const producto = await Producto.create(req.body);
+
+    const productoData = {
+      _id: productoId,
+      nombre,
+      precio: parseFloat(precio),
+      categoria,
+      stock: parseInt(stock)
+    };
+
+    // Si se subió una imagen, renombrar con el ID del producto
+    if (req.file) {
+      const extension = path.extname(req.file.filename);
+      const newFilename = `producto_${productoId}${extension}`;
+      const oldPath = req.file.path;
+      const newPath = path.join(uploadsDir, newFilename);
+      
+      fs.renameSync(oldPath, newPath);
+      productoData.imagen = `/uploads/${newFilename}`;
+    }
+
+    const producto = await Producto.create(productoData);
     res.json(producto);
   } catch (error) {
     console.error("Error al crear producto:", error);
+    // Si hay error, eliminar archivo subido
+    if (req.file) {
+      fs.unlink(req.file.path, (err) => {});
+    }
     res.status(500).json({ error: "Error al crear producto" });
   }
 });
 
-app.put("/api/productos/:id", async (req, res) => {
+app.put("/api/productos/:id", upload.single('imagen'), async (req, res) => {
   try {
+    const { nombre, precio, categoria, stock } = req.body;
+    
+    const updateData = {
+      nombre,
+      precio: parseFloat(precio),
+      categoria,
+      stock: parseInt(stock)
+    };
+
+    // Si se subió una nueva imagen
+    if (req.file) {
+      // Obtener el producto actual para eliminar la imagen anterior
+      const productoAnterior = await Producto.findOne({ _id: Number(req.params.id) });
+      if (productoAnterior && productoAnterior.imagen) {
+        const imagenAnterior = path.join(__dirname, productoAnterior.imagen);
+        if (fs.existsSync(imagenAnterior)) {
+          fs.unlinkSync(imagenAnterior);
+        }
+      }
+
+      // Renombrar nueva imagen con el ID del producto
+      const extension = path.extname(req.file.filename);
+      const newFilename = `producto_${req.params.id}${extension}`;
+      const oldPath = req.file.path;
+      const newPath = path.join(uploadsDir, newFilename);
+      
+      fs.renameSync(oldPath, newPath);
+      updateData.imagen = `/uploads/${newFilename}`;
+    }
+
     const producto = await Producto.findOneAndUpdate(
       { _id: Number(req.params.id) },
-      req.body,
+      updateData,
       { new: true }
     );
     if (!producto) {
@@ -139,19 +240,33 @@ app.put("/api/productos/:id", async (req, res) => {
     res.json(producto);
   } catch (error) {
     console.error("Error al actualizar producto:", error);
+    // Si hay error, eliminar archivo subido
+    if (req.file) {
+      fs.unlink(req.file.path, (err) => {});
+    }
     res.status(500).json({ error: "Error al actualizar producto" });
   }
 });
 
 app.delete("/api/productos/:id", async (req, res) => {
   try {
-    const producto = await Producto.findOneAndDelete({
+    const producto = await Producto.findOne({ _id: Number(req.params.id) });
+    
+    // Eliminar imagen si existe
+    if (producto && producto.imagen) {
+      const imagenPath = path.join(__dirname, producto.imagen);
+      if (fs.existsSync(imagenPath)) {
+        fs.unlinkSync(imagenPath);
+      }
+    }
+    
+    const productoEliminado = await Producto.findOneAndDelete({
       _id: Number(req.params.id),
     });
-    if (!producto) {
+    if (!productoEliminado) {
       return res.status(404).json({ error: "Producto no encontrado" });
     }
-    res.json(producto);
+    res.json(productoEliminado);
   } catch (error) {
     console.error("Error al eliminar producto:", error);
     res.status(500).json({ error: "Error al eliminar producto" });

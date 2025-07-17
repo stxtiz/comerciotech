@@ -276,14 +276,25 @@
                     </div>
                     <div class="mb-3">
                       <label for="producto-imagen" class="form-label"
-                        >URL de Imagen</label
+                        ><i class="bi bi-image me-1"></i>Imagen del Producto</label
                       >
                       <input
-                        type="text"
+                        type="file"
                         class="form-control"
                         id="producto-imagen"
-                        placeholder="https://ejemplo.com/imagen.jpg"
+                        accept="image/*"
                       />
+                      <div class="form-text">
+                        Formatos admitidos: JPG, PNG, GIF (máximo 5MB)
+                      </div>
+                      <!-- Preview de imagen actual -->
+                      <div id="imagen-preview" class="mt-2 d-none">
+                        <label class="form-label">Imagen actual:</label>
+                        <div>
+                          <img id="imagen-actual" src="" alt="Imagen del producto" 
+                               class="img-thumbnail" style="max-width: 150px; max-height: 150px;">
+                        </div>
+                      </div>
                     </div>
                     <div class="d-grid gap-2">
                       <button type="submit" class="btn btn-success">
