@@ -9,6 +9,32 @@ window._pedidos = [];
 // Variable para productos del pedido actual
 let productosDelPedido = [];
 
+// Cache para estado de imágenes
+const imageCache = new Map();
+
+/* ========================= UTILIDADES DE IMAGEN ========================= */
+// Función para crear imagen SVG por defecto
+function crearImagenPorDefecto() {
+  return "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='50' height='50' viewBox='0 0 50 50'%3E%3Crect width='50' height='50' fill='%23f8f9fa'/%3E%3Ctext x='25' y='25' text-anchor='middle' dy='.35em' font-family='Arial' font-size='10' fill='%236c757d'%3EImg%3C/text%3E%3C/svg%3E";
+}
+
+// Función para verificar si una URL de imagen existe
+async function verificarImagen(url) {
+  if (imageCache.has(url)) {
+    return imageCache.get(url);
+  }
+
+  try {
+    const response = await fetch(url, { method: "HEAD" });
+    const existe = response.ok;
+    imageCache.set(url, existe);
+    return existe;
+  } catch (error) {
+    imageCache.set(url, false);
+    return false;
+  }
+}
+
 /* ========================= CLIENTES ========================= */
 function renderClientes(clientes) {
   const tbody = document.getElementById("clientes-list");
@@ -168,6 +194,30 @@ async function submitClienteForm(e) {
 }
 
 /* ========================= PRODUCTOS ========================= */
+// Función auxiliar para construir URLs de imágenes de forma segura
+function construirURLImagen(rutaImagen) {
+  if (!rutaImagen) {
+    return crearImagenPorDefecto();
+  }
+
+  // Limpiar la ruta y construir URL completa
+  const rutaLimpia = rutaImagen.startsWith("/") ? rutaImagen : "/" + rutaImagen;
+  return `${API}${rutaLimpia}`;
+}
+
+// Función auxiliar para manejar errores de imagen
+function manejarErrorImagen(elemento, nombreProducto) {
+  // Solo mostrar error una vez por imagen
+  if (!elemento.dataset.errorMostrado) {
+    console.warn(`⚠️ Imagen no disponible para: ${nombreProducto}`);
+    elemento.dataset.errorMostrado = "true";
+  }
+
+  // Establecer imagen por defecto
+  elemento.src = crearImagenPorDefecto();
+  elemento.onerror = null; // Prevenir loops infinitos
+}
+
 function renderProductos(productos) {
   console.log("🎨 Renderizando productos:", productos.length);
   const tbody = document.getElementById("productos-list");
@@ -180,7 +230,6 @@ function renderProductos(productos) {
   tbody.innerHTML = "";
 
   if (productos.length === 0) {
-    console.log("⚠️ No hay productos para mostrar");
     tbody.innerHTML = `
       <tr>
         <td colspan="6" class="text-center text-muted py-4">
@@ -192,11 +241,6 @@ function renderProductos(productos) {
   }
 
   productos.forEach((p, index) => {
-    console.log(
-      `📦 Renderizando producto ${index + 1}:`,
-      p.nombre,
-      `Imagen: ${p.imagen || "Sin imagen"}`
-    );
     const tr = document.createElement("tr");
     tr.className = "fade-in";
 
@@ -210,17 +254,17 @@ function renderProductos(productos) {
       stockBadge = `<span class="badge bg-success">${p.stock}</span>`;
     }
 
+    // Crear la imagen con manejo de errores mejorado
+    const imagenSrc = construirURLImagen(p.imagen);
+    const imagenId = `img-producto-${p._id}`;
+
     tr.innerHTML = `
       <td>
-        <img src="${
-          p.imagen
-            ? `${API}${p.imagen.startsWith("/") ? "" : "/"}${p.imagen}`
-            : "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='50' height='50' viewBox='0 0 50 50'%3E%3Crect width='50' height='50' fill='%23f8f9fa'/%3E%3Ctext x='25' y='25' text-anchor='middle' dy='.35em' font-family='Arial' font-size='10' fill='%236c757d'%3EImg%3C/text%3E%3C/svg%3E"
-        }" 
-             alt="${p.nombre}" class="producto-img" 
-             onerror="console.log('❌ Error cargando imagen para:', '${
-               p.nombre
-             }'); this.src='data:image/svg+xml,%3Csvg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'50\\' height=\\'50\\' viewBox=\\'0 0 50 50\\'%3E%3Crect width=\\'50\\' height=\\'50\\' fill=\\'%23f8f9fa\\'/%3E%3Ctext x=\\'25\\' y=\\'25\\' text-anchor=\\'middle\\' dy=\\'.35em\\' font-family=\\'Arial\\' font-size=\\'10\\' fill=\\'%236c757d\\'%3EImg%3C/text%3E%3C/svg%3E'; this.onerror=null;">
+        <img id="${imagenId}" 
+             src="${imagenSrc}" 
+             alt="${p.nombre}" 
+             class="producto-img"
+             loading="lazy">
       </td>
       <td>
         <strong>${p.nombre}</strong><br>
@@ -245,6 +289,14 @@ function renderProductos(productos) {
       </td>
     `;
     tbody.appendChild(tr);
+
+    // Agregar el manejador de errores después de insertar en el DOM
+    const imgElement = document.getElementById(imagenId);
+    if (imgElement) {
+      imgElement.onerror = function () {
+        manejarErrorImagen(this, p.nombre);
+      };
+    }
   });
 
   console.log("✅ Productos renderizados correctamente en el DOM");
@@ -257,7 +309,12 @@ async function loadProductos() {
     if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
     const productos = await res.json();
     console.log("✅ Productos cargados:", productos.length, "productos");
-    console.log("📄 Datos de productos:", productos);
+
+    // Solo mostrar datos detallados en modo debug
+    if (window.location.hash === "#debug") {
+      console.log("📄 Datos de productos:", productos);
+    }
+
     window._productos = productos;
     renderProductos(productos);
     renderProductosSelect();
@@ -285,9 +342,14 @@ function editProducto(producto) {
   const imagenActual = document.getElementById("imagen-actual");
 
   if (producto.imagen) {
-    imagenActual.src = `${API}${producto.imagen.startsWith("/") ? "" : "/"}${
-      producto.imagen
-    }`;
+    imagenActual.src = construirURLImagen(producto.imagen);
+    imagenActual.onerror = function () {
+      console.warn(
+        `⚠️ No se pudo cargar la imagen del producto: ${producto.nombre}`
+      );
+      this.src = crearImagenPorDefecto();
+      this.onerror = null;
+    };
     imagenPreview.classList.remove("d-none");
   } else {
     imagenPreview.classList.add("d-none");
@@ -869,6 +931,15 @@ window.onload = function () {
     .then(() => {
       console.log("📦 Productos cargados, ahora cargando pedidos...");
       loadPedidos();
+
+      // Mostrar información adicional en modo debug
+      if (window.location.hash === "#debug") {
+        console.log("🔍 Modo debug activado");
+        console.log("📊 Cache de imágenes:", imageCache);
+        console.log(
+          "💡 Tip: Agregar #debug al final de la URL para ver información detallada"
+        );
+      }
     })
     .catch((error) => {
       console.error("❌ Error al cargar productos:", error);
