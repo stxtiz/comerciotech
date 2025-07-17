@@ -12,6 +12,9 @@ let productosDelPedido = [];
 // Cache para estado de imágenes
 const imageCache = new Map();
 
+// Set para controlar warnings ya mostrados (evitar duplicados)
+const warningsYaMostrados = new Set();
+
 /* ========================= UTILIDADES DE IMAGEN ========================= */
 // Función para crear imagen SVG por defecto
 function crearImagenPorDefecto() {
@@ -33,6 +36,40 @@ async function verificarImagen(url) {
     imageCache.set(url, false);
     return false;
   }
+}
+
+// Función para limpiar el cache de warnings al recargar datos
+function limpiarCacheWarnings() {
+  warningsYaMostrados.clear();
+}
+
+// Función para verificar conectividad del servidor de imágenes
+async function verificarServidorImagenes() {
+  try {
+    const response = await fetch(`${API}/test`, { method: "HEAD" });
+    return response.ok;
+  } catch (error) {
+    return false;
+  }
+}
+
+// Función mejorada para construir y verificar URLs de imagen
+async function construirYVerificarImagen(rutaImagen, nombreProducto) {
+  if (!rutaImagen) {
+    return crearImagenPorDefecto();
+  }
+
+  const url = construirURLImagen(rutaImagen);
+
+  // Verificar si la imagen existe (solo en modo debug para no sobrecargar)
+  if (window.location.hash === "#debug") {
+    const existe = await verificarImagen(url);
+    if (!existe) {
+      console.warn(`🔍 DEBUG: Imagen no encontrada en: ${url}`);
+    }
+  }
+
+  return url;
 }
 
 /* ========================= CLIENTES ========================= */
@@ -207,10 +244,12 @@ function construirURLImagen(rutaImagen) {
 
 // Función auxiliar para manejar errores de imagen
 function manejarErrorImagen(elemento, nombreProducto) {
-  // Solo mostrar error una vez por imagen
-  if (!elemento.dataset.errorMostrado) {
+  const claveWarning = `img-error-${nombreProducto}`;
+
+  // Solo mostrar warning una vez por producto usando el Set global
+  if (!warningsYaMostrados.has(claveWarning)) {
     console.warn(`⚠️ Imagen no disponible para: ${nombreProducto}`);
-    elemento.dataset.errorMostrado = "true";
+    warningsYaMostrados.add(claveWarning);
   }
 
   // Establecer imagen por defecto
@@ -224,6 +263,14 @@ function renderProductos(productos) {
 
   if (!tbody) {
     console.error("❌ No se encontró el elemento con ID 'productos-list'");
+    return;
+  }
+
+  // Evitar re-renderizado innecesario
+  if (
+    tbody.dataset.lastRender === JSON.stringify(productos.map((p) => p._id))
+  ) {
+    console.log("⏭️ Productos ya renderizados, saltando...");
     return;
   }
 
@@ -299,12 +346,18 @@ function renderProductos(productos) {
     }
   });
 
+  // Marcar como renderizado para evitar re-renderizados innecesarios
+  tbody.dataset.lastRender = JSON.stringify(productos.map((p) => p._id));
   console.log("✅ Productos renderizados correctamente en el DOM");
 }
 
 async function loadProductos() {
   try {
     console.log("🔄 Cargando productos desde:", `${API}/productos`);
+
+    // Limpiar warnings anteriores al recargar
+    limpiarCacheWarnings();
+
     const res = await fetch(`${API}/productos`);
     if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
     const productos = await res.json();
@@ -360,6 +413,11 @@ async function deleteProducto(id) {
   if (confirm("¿Estás seguro de que deseas eliminar este producto?")) {
     try {
       await fetch(`${API}/productos/${id}`, { method: "DELETE" });
+
+      // Limpiar cache de renderizado para forzar re-render
+      const tbody = document.getElementById("productos-list");
+      if (tbody) tbody.dataset.lastRender = "";
+
       loadProductos();
     } catch (error) {
       console.error("Error al eliminar producto:", error);
@@ -415,6 +473,11 @@ async function submitProductoForm(e) {
 
     await loadProductos();
     resetForm(form);
+
+    // Limpiar cache de renderizado para forzar re-render
+    const tbody = document.getElementById("productos-list");
+    if (tbody) tbody.dataset.lastRender = "";
+
     // Limpiar preview de imagen
     document.getElementById("imagen-preview").classList.add("d-none");
     alert(
@@ -926,6 +989,18 @@ window.onload = function () {
 
   // Cargar datos
   console.log("🚀 Iniciando carga de datos...");
+
+  // Verificar conectividad del servidor de imágenes en modo debug
+  if (window.location.hash === "#debug") {
+    verificarServidorImagenes().then((disponible) => {
+      console.log(
+        `🖼️ Servidor de imágenes: ${
+          disponible ? "✅ Disponible" : "❌ No disponible"
+        }`
+      );
+    });
+  }
+
   loadClientes();
   loadProductos()
     .then(() => {
@@ -936,6 +1011,7 @@ window.onload = function () {
       if (window.location.hash === "#debug") {
         console.log("🔍 Modo debug activado");
         console.log("📊 Cache de imágenes:", imageCache);
+        console.log("⚠️ Warnings mostrados:", warningsYaMostrados);
         console.log(
           "💡 Tip: Agregar #debug al final de la URL para ver información detallada"
         );
