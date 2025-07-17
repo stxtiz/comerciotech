@@ -1,53 +1,64 @@
-// URL base de la API (ajusta si es necesario)
-// Para AWS: cambiar por la IP pública o dominio de tu instancia
-// Ejemplo: "http://18.XXX.XXX.XXX:3000/api" o "https://tu-dominio.com/api"
-const API = "http://34.201.128.1:3000/api"; // ✅ IP de tu instancia AWS con PM2
+// URL base de la API
+const API = "http://34.201.128.1:3000/api";
 
+// Variables globales para almacenar datos
 window._clientes = [];
 window._productos = [];
 window._pedidos = [];
 
+// Variable para productos del pedido actual
+let productosDelPedido = [];
+
 /* ========================= CLIENTES ========================= */
 function renderClientes(clientes) {
-  const ul = document.getElementById("clientes-list");
-  ul.innerHTML = "";
-  clientes.forEach((c) => {
-    const li = document.createElement("li");
-    li.t; /* ========== INICIALIZACIÓN ========== */
-    window.onload = function () {
-      console.log("✅ Aplicación cargada correctamente - Cifrado en backend");
+  const tbody = document.getElementById("clientes-list");
+  tbody.innerHTML = "";
+  
+  if (clientes.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="5" class="text-center text-muted py-4">
+          <i class="bi bi-person-x me-2"></i>No hay clientes registrados
+        </td>
+      </tr>
+    `;
+    return;
+  }
 
-      // Cargar datos en el orden correcto
-      loadClientes();
-      loadProductos()
-        .then(() => {
-          // Después de cargar productos, cargar pedidos
-          loadPedidos();
-        })
-        .catch((error) => {
-          console.error("Error al cargar productos:", error);
-          // Cargar pedidos aunque falle la carga de productos
-          loadPedidos();
-        });
-    };
-    ent = `${c.nombre} (${c.correo}) - ${c.dirección}, ${c.teléfono}`;
-    const editBtn = document.createElement("button");
-    editBtn.textContent = "Editar";
-    editBtn.onclick = () => editCliente(c);
-    const delBtn = document.createElement("button");
-    delBtn.textContent = "Eliminar";
-    delBtn.onclick = () => deleteCliente(c._id);
-    li.append(" ", editBtn, delBtn);
-    ul.appendChild(li);
+  clientes.forEach((c) => {
+    const tr = document.createElement("tr");
+    tr.className = "fade-in";
+    tr.innerHTML = `
+      <td>
+        <div class="d-flex align-items-center">
+          <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 32px; height: 32px; font-size: 14px;">
+            ${c.nombre.charAt(0).toUpperCase()}
+          </div>
+          <strong>${c.nombre}</strong>
+        </div>
+      </td>
+      <td>${c.correo}</td>
+      <td>${c.dirección}</td>
+      <td>${c.teléfono}</td>
+      <td>
+        <div class="btn-group" role="group">
+          <button class="btn btn-warning btn-sm" onclick='editCliente(${JSON.stringify(c)})' title="Editar">
+            <i class="bi bi-pencil-square"></i>
+          </button>
+          <button class="btn btn-danger btn-sm" onclick="deleteCliente('${c._id}')" title="Eliminar">
+            <i class="bi bi-trash"></i>
+          </button>
+        </div>
+      </td>
+    `;
+    tbody.appendChild(tr);
   });
 }
 
 async function loadClientes() {
   try {
     const res = await fetch(`${API}/clientes`);
-    if (!res.ok) {
-      throw new Error(`HTTP error! status: ${res.status}`);
-    }
+    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
     const clientes = await res.json();
     window._clientes = clientes;
     renderClientes(clientes);
@@ -60,28 +71,38 @@ async function loadClientes() {
 
 function renderClientesSelect(clientes) {
   const select = document.getElementById("pedido-cliente");
-  select.innerHTML = "";
+  const currentValue = select.value;
+  select.innerHTML = '<option value="">Seleccionar cliente...</option>';
   clientes.forEach((c) => {
     const option = document.createElement("option");
     option.value = c._id;
-    option.textContent = c.nombre;
+    option.textContent = `${c.nombre} (${c.correo})`;
     select.appendChild(option);
   });
+  if (currentValue) select.value = currentValue;
 }
 
 function editCliente(cliente) {
+  document.getElementById("cliente-form-title").innerHTML = '<i class="bi bi-person-gear me-2"></i>Editar Cliente';
   document.getElementById("cliente-id").value = cliente._id;
   document.getElementById("cliente-nombre").value = cliente.nombre;
   document.getElementById("cliente-correo").value = cliente.correo;
   document.getElementById("cliente-direccion").value = cliente.dirección;
   document.getElementById("cliente-telefono").value = cliente.teléfono;
-  // No rellenar el campo de contraseña por seguridad
+  document.getElementById("cliente-password").value = "";
+  document.getElementById("cliente-password").placeholder = "Dejar vacío para no cambiar";
+  document.getElementById("cliente-password").required = false;
 }
 
 async function deleteCliente(id) {
-  if (confirm("¿Eliminar cliente?")) {
-    await fetch(`${API}/clientes/${id}`, { method: "DELETE" });
-    loadClientes();
+  if (confirm("¿Estás seguro de que deseas eliminar este cliente?")) {
+    try {
+      await fetch(`${API}/clientes/${id}`, { method: "DELETE" });
+      loadClientes();
+    } catch (error) {
+      console.error("Error al eliminar cliente:", error);
+      alert("Error al eliminar cliente");
+    }
   }
 }
 
@@ -89,28 +110,16 @@ async function submitClienteForm(e) {
   e.preventDefault();
   const form = e.target;
   const id = form["cliente-id"].value;
-  const nombre = form["cliente-nombre"].value;
-  const correo = form["cliente-correo"].value;
-  const dirección = form["cliente-direccion"].value;
-  const teléfono = form["cliente-telefono"].value;
-  const password = form["cliente-password"].value;
-
-  // Validar que se proporcione contraseña para nuevos clientes
-  if (!id && !password) {
-    alert("Por favor, ingresa una contraseña para el nuevo cliente.");
-    return;
-  }
-
   const data = {
-    nombre,
-    correo,
-    dirección,
-    teléfono,
+    nombre: form["cliente-nombre"].value,
+    correo: form["cliente-correo"].value,
+    dirección: form["cliente-direccion"].value,
+    teléfono: form["cliente-telefono"].value,
   };
 
-  // Solo enviar la contraseña si se proporciona
-  if (password) {
-    data.password = password; // El backend se encargará del cifrado
+  // Solo incluir password si se proporcionó
+  if (form["cliente-password"].value) {
+    data.password = form["cliente-password"].value;
   }
 
   try {
@@ -122,6 +131,11 @@ async function submitClienteForm(e) {
         body: JSON.stringify(data),
       });
     } else {
+      // Para nuevos clientes, la password es obligatoria
+      if (!form["cliente-password"].value) {
+        alert("La contraseña es obligatoria para nuevos clientes");
+        return;
+      }
       response = await fetch(`${API}/clientes`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -131,16 +145,12 @@ async function submitClienteForm(e) {
 
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(
-        errorData.error || `HTTP error! status: ${response.status}`
-      );
+      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
     }
 
     await loadClientes();
     resetForm(form);
-    alert(
-      id ? "Cliente actualizado correctamente" : "Cliente creado correctamente"
-    );
+    alert(id ? "Cliente actualizado correctamente" : "Cliente creado correctamente");
   } catch (error) {
     console.error("Error al guardar cliente:", error);
     alert(`Error al guardar cliente: ${error.message}`);
@@ -149,31 +159,70 @@ async function submitClienteForm(e) {
 
 /* ========================= PRODUCTOS ========================= */
 function renderProductos(productos) {
-  const ul = document.getElementById("productos-list");
-  ul.innerHTML = "";
+  const tbody = document.getElementById("productos-list");
+  tbody.innerHTML = "";
+  
+  if (productos.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="6" class="text-center text-muted py-4">
+          <i class="bi bi-box-seam-fill me-2"></i>No hay productos registrados
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
   productos.forEach((p) => {
-    const li = document.createElement("li");
-    li.textContent = `${p.nombre} - ${p.categoría} - $${p.precio} (${p.stock} en stock)`;
-    const editBtn = document.createElement("button");
-    editBtn.textContent = "Editar";
-    editBtn.onclick = () => editProducto(p);
-    const delBtn = document.createElement("button");
-    delBtn.textContent = "Eliminar";
-    delBtn.onclick = () => deleteProducto(p._id);
-    li.append(" ", editBtn, delBtn);
-    ul.appendChild(li);
+    const tr = document.createElement("tr");
+    tr.className = "fade-in";
+    
+    // Determinar color del badge según stock
+    let stockBadge = "";
+    if (p.stock === 0) {
+      stockBadge = `<span class="badge bg-danger">${p.stock}</span>`;
+    } else if (p.stock <= 10) {
+      stockBadge = `<span class="badge bg-warning text-dark">${p.stock}</span>`;
+    } else {
+      stockBadge = `<span class="badge bg-success">${p.stock}</span>`;
+    }
+
+    tr.innerHTML = `
+      <td>
+        <img src="${p.imagen || 'https://via.placeholder.com/50?text=No+Img'}" 
+             alt="${p.nombre}" class="producto-img" 
+             onerror="this.src='https://via.placeholder.com/50?text=No+Img'">
+      </td>
+      <td>
+        <strong>${p.nombre}</strong><br>
+        <small class="text-muted">${p.descripción}</small>
+      </td>
+      <td><span class="badge bg-info">${p.categoría}</span></td>
+      <td><strong class="text-success">$${p.precio.toFixed(2)}</strong></td>
+      <td>${stockBadge}</td>
+      <td>
+        <div class="btn-group" role="group">
+          <button class="btn btn-warning btn-sm" onclick='editProducto(${JSON.stringify(p)})' title="Editar">
+            <i class="bi bi-pencil-square"></i>
+          </button>
+          <button class="btn btn-danger btn-sm" onclick="deleteProducto('${p._id}')" title="Eliminar">
+            <i class="bi bi-trash"></i>
+          </button>
+        </div>
+      </td>
+    `;
+    tbody.appendChild(tr);
   });
 }
 
 async function loadProductos() {
   try {
     const res = await fetch(`${API}/productos`);
-    if (!res.ok) {
-      throw new Error(`HTTP error! status: ${res.status}`);
-    }
+    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
     const productos = await res.json();
     window._productos = productos;
     renderProductos(productos);
+    renderProductosSelect();
   } catch (error) {
     console.error("Error al cargar productos:", error);
     alert("Error al cargar productos. Revisa la consola para más detalles.");
@@ -181,19 +230,25 @@ async function loadProductos() {
 }
 
 function editProducto(producto) {
+  document.getElementById("producto-form-title").innerHTML = '<i class="bi bi-box-seam-gear me-2"></i>Editar Producto';
   document.getElementById("producto-id").value = producto._id;
   document.getElementById("producto-nombre").value = producto.nombre;
   document.getElementById("producto-descripcion").value = producto.descripción;
   document.getElementById("producto-categoria").value = producto.categoría;
   document.getElementById("producto-precio").value = producto.precio;
   document.getElementById("producto-stock").value = producto.stock;
-  document.getElementById("producto-imagen").value = producto.imagen;
+  document.getElementById("producto-imagen").value = producto.imagen || "";
 }
 
 async function deleteProducto(id) {
-  if (confirm("¿Eliminar producto?")) {
-    await fetch(`${API}/productos/${id}`, { method: "DELETE" });
-    loadProductos();
+  if (confirm("¿Estás seguro de que deseas eliminar este producto?")) {
+    try {
+      await fetch(`${API}/productos/${id}`, { method: "DELETE" });
+      loadProductos();
+    } catch (error) {
+      console.error("Error al eliminar producto:", error);
+      alert("Error al eliminar producto");
+    }
   }
 }
 
@@ -201,20 +256,13 @@ async function submitProductoForm(e) {
   e.preventDefault();
   const form = e.target;
   const id = form["producto-id"].value;
-  const nombre = form["producto-nombre"].value;
-  const descripción = form["producto-descripcion"].value; // con tilde
-  const categoría = form["producto-categoria"].value; // con tilde
-  const precio = Number(form["producto-precio"].value);
-  const stock = Number(form["producto-stock"].value);
-  const imagen = form["producto-imagen"].value; // cambia a 'imagen'
-
   const data = {
-    nombre,
-    descripción,
-    categoría,
-    precio,
-    stock,
-    imagen,
+    nombre: form["producto-nombre"].value,
+    descripción: form["producto-descripcion"].value,
+    categoría: form["producto-categoria"].value,
+    precio: Number(form["producto-precio"].value),
+    stock: Number(form["producto-stock"].value),
+    imagen: form["producto-imagen"].value || null,
   };
 
   try {
@@ -235,18 +283,12 @@ async function submitProductoForm(e) {
 
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(
-        errorData.error || `HTTP error! status: ${response.status}`
-      );
+      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
     }
 
     await loadProductos();
     resetForm(form);
-    alert(
-      id
-        ? "Producto actualizado correctamente"
-        : "Producto creado correctamente"
-    );
+    alert(id ? "Producto actualizado correctamente" : "Producto creado correctamente");
   } catch (error) {
     console.error("Error al guardar producto:", error);
     alert(`Error al guardar producto: ${error.message}`);
@@ -254,53 +296,85 @@ async function submitProductoForm(e) {
 }
 
 /* ========================= PEDIDOS ========================= */
-// Variable para almacenar productos del pedido actual
-let productosDelPedido = [];
-
 function renderPedidos(pedidos) {
-  const ul = document.getElementById("pedidos-list");
-  ul.innerHTML = "";
-  pedidos.forEach((p) => {
-    const li = document.createElement("li");
-    const clienteNombre = p.cliente_id?.nombre || `Cliente ID: ${p.cliente_id}`;
-    const fechaFormateada = p.fecha
-      ? new Date(p.fecha).toLocaleDateString()
-      : "Sin fecha";
-
-    li.innerHTML = `
-      <strong>Cliente:</strong> ${clienteNombre} | 
-      <strong>Fecha:</strong> ${fechaFormateada} | 
-      <strong>Total:</strong> $${p.total} | 
-      <strong>Estado:</strong> ${p.estado}
-      <br>
-      <strong>Productos:</strong> ${p.productos?.length || 0} items
+  const tbody = document.getElementById("pedidos-list");
+  tbody.innerHTML = "";
+  
+  if (pedidos.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="6" class="text-center text-muted py-4">
+          <i class="bi bi-cart-x me-2"></i>No hay pedidos registrados
+        </td>
+      </tr>
     `;
+    return;
+  }
 
-    const editBtn = document.createElement("button");
-    editBtn.textContent = "Editar";
-    editBtn.onclick = () => editPedido(p);
+  pedidos.forEach((p) => {
+    const tr = document.createElement("tr");
+    tr.className = "fade-in";
+    
+    const clienteNombre = p.cliente_id?.nombre || `ID: ${p.cliente_id}`;
+    const fechaFormateada = p.fecha ? new Date(p.fecha).toLocaleDateString() : "N/A";
+    
+    // Badge de estado
+    let estadoBadge = "";
+    switch (p.estado) {
+      case 'Pendiente': estadoBadge = '<span class="badge bg-warning text-dark">Pendiente</span>'; break;
+      case 'En Proceso': estadoBadge = '<span class="badge bg-info">En Proceso</span>'; break;
+      case 'Enviado': estadoBadge = '<span class="badge bg-primary">Enviado</span>'; break;
+      case 'Entregado': estadoBadge = '<span class="badge bg-success">Entregado</span>'; break;
+      case 'Cancelado': estadoBadge = '<span class="badge bg-danger">Cancelado</span>'; break;
+      default: estadoBadge = '<span class="badge bg-secondary">Desconocido</span>';
+    }
 
-    const delBtn = document.createElement("button");
-    delBtn.textContent = "Eliminar";
-    delBtn.onclick = () => deletePedido(p._id);
-
-    li.append(" ", editBtn, delBtn);
-    ul.appendChild(li);
+    tr.innerHTML = `
+      <td>
+        <div class="d-flex align-items-center">
+          <div class="bg-info text-white rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 32px; height: 32px; font-size: 12px;">
+            <i class="bi bi-person"></i>
+          </div>
+          <strong>${clienteNombre}</strong>
+        </div>
+      </td>
+      <td>${fechaFormateada}</td>
+      <td><strong class="text-success">$${p.total.toFixed(2)}</strong></td>
+      <td>${estadoBadge}</td>
+      <td class="text-center">
+        <span class="badge bg-secondary">${p.productos?.length || 0}</span>
+      </td>
+      <td>
+        <div class="btn-group" role="group">
+          <button class="btn btn-warning btn-sm" onclick='editPedido(${JSON.stringify(p)})' title="Editar">
+            <i class="bi bi-pencil-square"></i>
+          </button>
+          <button class="btn btn-danger btn-sm" onclick="deletePedido('${p._id}')" title="Eliminar">
+            <i class="bi bi-trash"></i>
+          </button>
+        </div>
+      </td>
+    `;
+    tbody.appendChild(tr);
   });
 }
 
 function renderProductosSelect() {
   const selects = document.querySelectorAll(".producto-select");
   selects.forEach((select) => {
+    const selectedValue = select.value;
     select.innerHTML = '<option value="">Seleccionar producto...</option>';
+    
     window._productos.forEach((producto) => {
       const option = document.createElement("option");
       option.value = producto._id;
-      option.textContent = `${producto.nombre} - $${producto.precio} (Stock: ${producto.stock})`;
+      option.textContent = `${producto.nombre} - $${producto.precio.toFixed(2)} (Stock: ${producto.stock})`;
       option.dataset.precio = producto.precio;
       option.dataset.stock = producto.stock;
       select.appendChild(option);
     });
+
+    if (selectedValue) select.value = selectedValue;
   });
 }
 
@@ -313,77 +387,58 @@ function agregarProductoAlPedido() {
   productoDiv.dataset.index = index;
 
   productoDiv.innerHTML = `
-    <div style="border: 1px solid #ccc; padding: 10px; margin: 5px 0; border-radius: 5px;">
-      <label>Producto:</label>
-      <select class="producto-select" data-index="${index}" required>
-        <option value="">Seleccionar producto...</option>
-      </select>
-      
-      <label>Cantidad:</label>
-      <input type="number" class="producto-cantidad" data-index="${index}" min="1" value="1" required>
-      
-      <label>Precio Unitario:</label>
-      <input type="number" class="producto-precio-unitario" data-index="${index}" step="0.01" readonly>
-      
-      <label>Subtotal:</label>
-      <span class="producto-subtotal" data-index="${index}">$0.00</span>
-      
-      <button type="button" onclick="eliminarProductoDelPedido(${index})" style="margin-left: 10px; background: #dc3545; color: white;">
-        Eliminar
-      </button>
-    </div>
+    <select class="form-select producto-select" data-index="${index}" required>
+      <option value="">Seleccionar...</option>
+    </select>
+    <input type="number" class="form-control producto-cantidad" data-index="${index}" 
+           min="1" value="1" placeholder="Cantidad" required style="max-width: 100px;">
+    <input type="text" class="form-control producto-precio-unitario" data-index="${index}" 
+           placeholder="Precio" readonly style="max-width: 120px;">
+    <span class="producto-subtotal fw-bold text-primary" data-index="${index}">$0.00</span>
+    <button type="button" class="btn btn-danger btn-sm" onclick="eliminarProductoDelPedido(${index})" title="Eliminar">
+      <i class="bi bi-trash"></i>
+    </button>
   `;
 
   wrapper.appendChild(productoDiv);
 
-  // Agregar el producto al array
+  // Agregar producto al array
   productosDelPedido.push({
     producto_id: "",
     cantidad: 1,
-    precio_unitario: 0,
+    precio_unitario: 0
   });
 
-  // Llenar el select con productos
+  // Llenar select de productos
   renderProductosSelect();
 
   // Agregar event listeners
   const select = productoDiv.querySelector(".producto-select");
   const cantidadInput = productoDiv.querySelector(".producto-cantidad");
-  const precioInput = productoDiv.querySelector(".producto-precio-unitario");
 
-  select.addEventListener("change", (e) =>
-    actualizarProductoPedido(index, "producto_id", e.target.value)
-  );
-  cantidadInput.addEventListener("input", (e) =>
-    actualizarProductoPedido(index, "cantidad", e.target.value)
-  );
+  select.addEventListener("change", (e) => actualizarProductoPedido(index, "producto_id", e.target.value));
+  cantidadInput.addEventListener("input", (e) => actualizarProductoPedido(index, "cantidad", e.target.value));
 }
 
 function actualizarProductoPedido(index, campo, valor) {
   if (!productosDelPedido[index]) return;
 
   if (campo === "producto_id") {
-    productosDelPedido[index].producto_id = Number(valor);
+    productosDelPedido[index].producto_id = valor;
 
-    // Actualizar precio unitario basado en el producto seleccionado
-    const select = document.querySelector(
-      `.producto-select[data-index="${index}"]`
-    );
-    const selectedOption = select.options[select.selectedIndex];
+    // Actualizar precio unitario
+    const selectedOption = document.querySelector(`.producto-select[data-index="${index}"] option[value="${valor}"]`);
     if (selectedOption && selectedOption.dataset.precio) {
       const precio = Number(selectedOption.dataset.precio);
       productosDelPedido[index].precio_unitario = precio;
 
-      const precioInput = document.querySelector(
-        `.producto-precio-unitario[data-index="${index}"]`
-      );
-      precioInput.value = precio;
+      const precioInput = document.querySelector(`.producto-precio-unitario[data-index="${index}"]`);
+      precioInput.value = `$${precio.toFixed(2)}`;
     }
   } else if (campo === "cantidad") {
     productosDelPedido[index].cantidad = Number(valor);
   }
 
-  // Actualizar subtotal
   actualizarSubtotal(index);
   calcularTotalPedido();
 }
@@ -393,32 +448,26 @@ function actualizarSubtotal(index) {
   if (!producto) return;
 
   const subtotal = producto.cantidad * producto.precio_unitario;
-  const subtotalSpan = document.querySelector(
-    `.producto-subtotal[data-index="${index}"]`
-  );
+  const subtotalSpan = document.querySelector(`.producto-subtotal[data-index="${index}"]`);
   if (subtotalSpan) {
     subtotalSpan.textContent = `$${subtotal.toFixed(2)}`;
   }
 }
 
 function eliminarProductoDelPedido(index) {
-  // Eliminar del DOM
-  const productoDiv = document.querySelector(
-    `.producto-item[data-index="${index}"]`
-  );
-  if (productoDiv) {
-    productoDiv.remove();
-  }
+  const productoDiv = document.querySelector(`.producto-item[data-index="${index}"]`);
+  if (productoDiv) productoDiv.remove();
 
-  // Eliminar del array
   productosDelPedido.splice(index, 1);
+  reindexarProductos();
+  calcularTotalPedido();
+}
 
-  // Reindexar los elementos restantes
+function reindexarProductos() {
   const productosItems = document.querySelectorAll(".producto-item");
   productosItems.forEach((item, newIndex) => {
     item.dataset.index = newIndex;
-
-    // Actualizar todos los data-index y eventos
+    
     const select = item.querySelector(".producto-select");
     const cantidad = item.querySelector(".producto-cantidad");
     const precio = item.querySelector(".producto-precio-unitario");
@@ -428,51 +477,44 @@ function eliminarProductoDelPedido(index) {
     if (select) {
       select.dataset.index = newIndex;
       select.removeEventListener("change", select._listener);
-      select._listener = (e) =>
-        actualizarProductoPedido(newIndex, "producto_id", e.target.value);
+      select._listener = (e) => actualizarProductoPedido(newIndex, "producto_id", e.target.value);
       select.addEventListener("change", select._listener);
     }
 
     if (cantidad) {
       cantidad.dataset.index = newIndex;
       cantidad.removeEventListener("input", cantidad._listener);
-      cantidad._listener = (e) =>
-        actualizarProductoPedido(newIndex, "cantidad", e.target.value);
+      cantidad._listener = (e) => actualizarProductoPedido(newIndex, "cantidad", e.target.value);
       cantidad.addEventListener("input", cantidad._listener);
     }
 
     if (precio) precio.dataset.index = newIndex;
     if (subtotal) subtotal.dataset.index = newIndex;
-    if (btnEliminar)
-      btnEliminar.onclick = () => eliminarProductoDelPedido(newIndex);
+    if (btnEliminar) btnEliminar.onclick = () => eliminarProductoDelPedido(newIndex);
   });
-
-  calcularTotalPedido();
 }
 
 function calcularTotalPedido() {
   const total = productosDelPedido.reduce((sum, producto) => {
-    return sum + producto.cantidad * producto.precio_unitario;
+    return sum + (producto.cantidad * producto.precio_unitario);
   }, 0);
 
-  const totalInput = document.getElementById("pedido-total");
-  totalInput.value = total.toFixed(2);
+  const totalSpan = document.getElementById("pedido-total");
+  totalSpan.textContent = `$${total.toFixed(2)}`;
 }
 
 function limpiarProductosDelPedido() {
   productosDelPedido = [];
   const wrapper = document.getElementById("pedido-productos-wrapper");
   wrapper.innerHTML = "";
-  const totalInput = document.getElementById("pedido-total");
-  totalInput.value = "0.00";
+  const totalSpan = document.getElementById("pedido-total");
+  totalSpan.textContent = "$0.00";
 }
 
 async function loadPedidos() {
   try {
     const res = await fetch(`${API}/pedidos`);
-    if (!res.ok) {
-      throw new Error(`HTTP error! status: ${res.status}`);
-    }
+    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
     const pedidos = await res.json();
     window._pedidos = pedidos;
     renderPedidos(pedidos);
@@ -483,11 +525,10 @@ async function loadPedidos() {
 }
 
 function editPedido(pedido) {
+  document.getElementById("pedido-form-title").innerHTML = '<i class="bi bi-cart-gear me-2"></i>Editar Pedido';
   document.getElementById("pedido-id").value = pedido._id;
-  document.getElementById("pedido-cliente").value =
-    pedido.cliente_id?._id || pedido.cliente_id;
+  document.getElementById("pedido-cliente").value = pedido.cliente_id?._id || pedido.cliente_id;
 
-  // Formatear fecha para el input date
   if (pedido.fecha) {
     const fecha = new Date(pedido.fecha);
     const fechaFormateada = fecha.toISOString().split("T")[0];
@@ -496,32 +537,23 @@ function editPedido(pedido) {
 
   document.getElementById("pedido-estado").value = pedido.estado;
 
-  // Limpiar productos actuales
   limpiarProductosDelPedido();
 
-  // Cargar productos del pedido
   if (pedido.productos && pedido.productos.length > 0) {
     pedido.productos.forEach((producto) => {
       agregarProductoAlPedido();
       const index = productosDelPedido.length - 1;
 
-      // Establecer valores
       setTimeout(() => {
-        const select = document.querySelector(
-          `.producto-select[data-index="${index}"]`
-        );
-        const cantidadInput = document.querySelector(
-          `.producto-cantidad[data-index="${index}"]`
-        );
-
-        if (select) {
+        const select = document.querySelector(`.producto-select[data-index="${index}"]`);
+        const cantidadInput = document.querySelector(`.producto-cantidad[data-index="${index}"]`);
+        
+        if (select && cantidadInput) {
           select.value = producto.producto_id?._id || producto.producto_id;
-          actualizarProductoPedido(index, "producto_id", select.value);
-        }
-
-        if (cantidadInput) {
           cantidadInput.value = producto.cantidad;
-          actualizarProductoPedido(index, "cantidad", producto.cantidad);
+          
+          actualizarProductoPedido(index, "producto_id", select.value);
+          actualizarProductoPedido(index, "cantidad", cantidadInput.value);
         }
       }, 100);
     });
@@ -529,9 +561,14 @@ function editPedido(pedido) {
 }
 
 async function deletePedido(id) {
-  if (confirm("¿Eliminar pedido?")) {
-    await fetch(`${API}/pedidos/${id}`, { method: "DELETE" });
-    loadPedidos();
+  if (confirm("¿Estás seguro de que deseas eliminar este pedido?")) {
+    try {
+      await fetch(`${API}/pedidos/${id}`, { method: "DELETE" });
+      loadPedidos();
+    } catch (error) {
+      console.error("Error al eliminar pedido:", error);
+      alert("Error al eliminar pedido");
+    }
   }
 }
 
@@ -543,19 +580,16 @@ async function submitPedidoForm(e) {
   const fecha = form["pedido-fecha"].value;
   const estado = form["pedido-estado"].value;
 
-  // Validar que se haya seleccionado un cliente
   if (!cliente) {
     alert("Por favor, selecciona un cliente para el pedido.");
     return;
   }
 
-  // Validar que haya al menos un producto
   if (productosDelPedido.length === 0) {
     alert("Por favor, agrega al menos un producto al pedido.");
     return;
   }
 
-  // Validar que todos los productos tengan datos completos
   for (let i = 0; i < productosDelPedido.length; i++) {
     const producto = productosDelPedido[i];
     if (!producto.producto_id || !producto.cantidad || producto.cantidad <= 0) {
@@ -564,18 +598,17 @@ async function submitPedidoForm(e) {
     }
   }
 
-  // Calcular el total
   const total = productosDelPedido.reduce((sum, producto) => {
-    return sum + producto.cantidad * producto.precio_unitario;
+    return sum + (producto.cantidad * producto.precio_unitario);
   }, 0);
 
   const data = {
-    cliente_id: Number(cliente),
+    cliente_id: cliente,
     fecha: fecha,
     total: total,
     estado: estado,
     productos: productosDelPedido.map((p) => ({
-      producto_id: Number(p.producto_id),
+      producto_id: p.producto_id,
       cantidad: Number(p.cantidad),
       precio_unitario: Number(p.precio_unitario),
     })),
@@ -599,17 +632,13 @@ async function submitPedidoForm(e) {
 
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(
-        errorData.error || `HTTP error! status: ${response.status}`
-      );
+      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
     }
 
     await loadPedidos();
     resetForm(form);
     limpiarProductosDelPedido();
-    alert(
-      id ? "Pedido actualizado correctamente" : "Pedido creado correctamente"
-    );
+    alert(id ? "Pedido actualizado correctamente" : "Pedido creado correctamente");
   } catch (error) {
     console.error("Error al guardar pedido:", error);
     alert(`Error al guardar pedido: ${error.message}`);
@@ -619,12 +648,20 @@ async function submitPedidoForm(e) {
 /* ========== UTILITARIOS ========== */
 function resetForm(form) {
   form.reset();
-  if (form["cliente-id"]) form["cliente-id"].value = "";
-  if (form["producto-id"]) form["producto-id"].value = "";
-  if (form["pedido-id"]) form["pedido-id"].value = "";
+  
+  const idFields = form.querySelectorAll('input[type="hidden"]');
+  idFields.forEach(field => field.value = '');
 
-  // Limpiar productos del pedido si es el formulario de pedidos
-  if (form.id === "pedido-form") {
+  if (form.id === 'cliente-form') {
+    document.getElementById('cliente-form-title').innerHTML = '<i class="bi bi-person-plus me-2"></i>Agregar Cliente';
+    document.getElementById("cliente-password").placeholder = "Contraseña";
+    document.getElementById("cliente-password").required = true;
+  }
+  if (form.id === 'producto-form') {
+    document.getElementById('producto-form-title').innerHTML = '<i class="bi bi-box-seam-fill me-2"></i>Agregar Producto';
+  }
+  if (form.id === 'pedido-form') {
+    document.getElementById('pedido-form-title').innerHTML = '<i class="bi bi-cart-plus me-2"></i>Crear Pedido';
     limpiarProductosDelPedido();
   }
 }
@@ -645,17 +682,30 @@ document.getElementById("cancelar-edicion-pedido").onclick = function () {
   resetForm(document.getElementById("pedido-form"));
 };
 
-// Event listener para agregar productos al pedido
-document.getElementById("agregar-producto-al-pedido").onclick =
-  agregarProductoAlPedido;
+document.getElementById("agregar-producto-al-pedido").onclick = agregarProductoAlPedido;
 
-// Función global para eliminar productos (necesaria para el onclick en el HTML)
+// Funciones globales para eventos onclick
+window.editCliente = editCliente;
+window.deleteCliente = deleteCliente;
+window.editProducto = editProducto;
+window.deleteProducto = deleteProducto;
+window.editPedido = editPedido;
+window.deletePedido = deletePedido;
 window.eliminarProductoDelPedido = eliminarProductoDelPedido;
 
 /* ========== INICIALIZACIÓN ========== */
 window.onload = function () {
-  console.log("✅ Aplicación cargada correctamente - Cifrado en backend");
+  console.log("✅ Aplicación cargada correctamente - Diseño Bootstrap");
+  
+  // Establecer fecha actual por defecto
+  document.getElementById("pedido-fecha").value = new Date().toISOString().split("T")[0];
+  
+  // Cargar datos
   loadClientes();
-  loadProductos();
-  loadPedidos();
+  loadProductos().then(() => {
+    loadPedidos();
+  }).catch((error) => {
+    console.error("Error al cargar productos:", error);
+    loadPedidos();
+  });
 };

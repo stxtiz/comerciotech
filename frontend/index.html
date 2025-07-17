@@ -2,111 +2,323 @@
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
-    <title>ComercioTech - CRUD Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ComercioTech - Dashboard</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
-    <h1>ComercioTech - CRUD Dashboard</h1>
-
-    <section>
-      <h2>Clientes</h2>
-      <form id="cliente-form">
-        <input type="hidden" id="cliente-id" />
-        <input type="text" id="cliente-nombre" placeholder="Nombre" required />
-        <input type="email" id="cliente-correo" placeholder="Correo" required />
-        <input
-          type="text"
-          id="cliente-direccion"
-          placeholder="Dirección"
-          required
-        />
-        <input
-          type="text"
-          id="cliente-telefono"
-          placeholder="Teléfono"
-          required
-        />
-        <input
-          type="password"
-          id="cliente-password"
-          placeholder="Contraseña"
-          autocomplete="new-password"
-          required
-        />
-        <button type="submit">Guardar Cliente</button>
-        <button type="button" id="cancelar-edicion-cliente">Cancelar</button>
-      </form>
-      <ul id="clientes-list"></ul>
-    </section>
-
-    <section>
-      <h2>Productos</h2>
-      <form id="producto-form">
-        <input type="hidden" id="producto-id" />
-        <input type="text" id="producto-nombre" placeholder="Nombre" required />
-        <input
-          type="text"
-          id="producto-descripcion"
-          placeholder="Descripción"
-          required
-        />
-        <input
-          type="text"
-          id="producto-categoria"
-          placeholder="Categoría"
-          required
-        />
-        <input
-          type="number"
-          id="producto-precio"
-          placeholder="Precio"
-          required
-        />
-        <input type="number" id="producto-stock" placeholder="Stock" required />
-        <input type="text" id="producto-imagen" placeholder="URL Imagen" />
-        <button type="submit">Guardar Producto</button>
-        <button type="button" id="cancelar-edicion-producto">Cancelar</button>
-      </form>
-      <ul id="productos-list"></ul>
-    </section>
-
-    <section>
-      <h2>Pedidos</h2>
-      <form id="pedido-form">
-        <input type="hidden" id="pedido-id" />
-        <label for="pedido-cliente">Cliente:</label>
-        <select id="pedido-cliente" required></select>
-
-        <label for="pedido-fecha">Fecha:</label>
-        <input type="date" id="pedido-fecha" required />
-
-        <label for="pedido-estado">Estado:</label>
-        <input type="text" id="pedido-estado" placeholder="Estado" required />
-
-        <h3>Productos del Pedido:</h3>
-        <div id="pedido-productos-wrapper">
-          <!-- Los productos se agregarán dinámicamente aquí -->
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">
+                <i class="bi bi-gem me-2"></i>ComercioTech
+            </a>
+            <span class="navbar-text">
+                Sistema de Gestión Comercial
+            </span>
         </div>
-        <button type="button" id="agregar-producto-al-pedido">
-          + Agregar Producto
-        </button>
+    </nav>
 
-        <label for="pedido-total">Total:</label>
-        <input
-          type="number"
-          id="pedido-total"
-          placeholder="Total"
-          step="0.01"
-          readonly
-        />
+    <div class="container-fluid mt-4">
 
-        <button type="submit">Guardar Pedido</button>
-        <button type="button" id="cancelar-edicion-pedido">Cancelar</button>
-      </form>
-      <ul id="pedidos-list"></ul>
-    </section>
+        <!-- Navigation Tabs -->
+        <ul class="nav nav-tabs" id="mainTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="clientes-tab" data-bs-toggle="tab" data-bs-target="#clientes" type="button" role="tab">
+                    <i class="bi bi-people-fill me-2"></i>Clientes
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="productos-tab" data-bs-toggle="tab" data-bs-target="#productos" type="button" role="tab">
+                    <i class="bi bi-box-seam-fill me-2"></i>Productos
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="pedidos-tab" data-bs-toggle="tab" data-bs-target="#pedidos" type="button" role="tab">
+                    <i class="bi bi-cart-check-fill me-2"></i>Pedidos
+                </button>
+            </li>
+        </ul>
 
-    <!-- SCRIPTS AL FINAL DEL BODY, EN ORDEN CORRECTO -->
+        <!-- Tab Content -->
+        <div class="tab-content" id="mainTabContent">
+            <!-- Clientes Tab -->
+            <div class="tab-pane fade show active" id="clientes" role="tabpanel">
+                <div class="row mt-3">
+                    <div class="col-md-4">
+                        <div class="card shadow-sm">
+                            <div class="card-header bg-primary text-white">
+                                <h5 class="mb-0" id="cliente-form-title">
+                                    <i class="bi bi-person-plus me-2"></i>Agregar Cliente
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <form id="cliente-form">
+                                    <input type="hidden" id="cliente-id" />
+                                    <div class="mb-3">
+                                        <label for="cliente-nombre" class="form-label">Nombre</label>
+                                        <input type="text" class="form-control" id="cliente-nombre" placeholder="Nombre completo" required />
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="cliente-correo" class="form-label">Correo Electrónico</label>
+                                        <input type="email" class="form-control" id="cliente-correo" placeholder="ejemplo@correo.com" required />
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="cliente-direccion" class="form-label">Dirección</label>
+                                        <input type="text" class="form-control" id="cliente-direccion" placeholder="Dirección completa" required />
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="cliente-telefono" class="form-label">Teléfono</label>
+                                        <input type="text" class="form-control" id="cliente-telefono" placeholder="Número de teléfono" required />
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="cliente-password" class="form-label">Contraseña</label>
+                                        <input type="password" class="form-control" id="cliente-password" placeholder="Contraseña" autocomplete="new-password" required />
+                                    </div>
+                                    <div class="d-grid gap-2">
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="bi bi-save me-2"></i>Guardar Cliente
+                                        </button>
+                                        <button type="button" id="cancelar-edicion-cliente" class="btn btn-outline-secondary">
+                                            <i class="bi bi-x-circle me-2"></i>Cancelar
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-8">
+                        <div class="card shadow-sm">
+                            <div class="card-header bg-light">
+                                <h5 class="mb-0">
+                                    <i class="bi bi-people me-2"></i>Lista de Clientes
+                                </h5>
+                            </div>
+                            <div class="card-body p-0">
+                                <div class="table-responsive">
+                                    <table class="table table-hover mb-0">
+                                        <thead class="table-dark">
+                                            <tr>
+                                                <th>Nombre</th>
+                                                <th>Correo</th>
+                                                <th>Dirección</th>
+                                                <th>Teléfono</th>
+                                                <th width="120">Acciones</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="clientes-list">
+                                            <tr>
+                                                <td colspan="5" class="text-center text-muted py-4">
+                                                    <i class="bi bi-hourglass-split me-2"></i>Cargando clientes...
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Productos Tab -->
+            <div class="tab-pane fade" id="productos" role="tabpanel">
+                <div class="row mt-3">
+                    <div class="col-md-4">
+                        <div class="card shadow-sm">
+                            <div class="card-header bg-success text-white">
+                                <h5 class="mb-0" id="producto-form-title">
+                                    <i class="bi bi-box-seam-fill me-2"></i>Agregar Producto
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <form id="producto-form">
+                                    <input type="hidden" id="producto-id" />
+                                    <div class="mb-3">
+                                        <label for="producto-nombre" class="form-label">Nombre</label>
+                                        <input type="text" class="form-control" id="producto-nombre" placeholder="Nombre del producto" required />
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="producto-descripcion" class="form-label">Descripción</label>
+                                        <textarea class="form-control" id="producto-descripcion" rows="2" placeholder="Descripción del producto" required></textarea>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="producto-categoria" class="form-label">Categoría</label>
+                                        <input type="text" class="form-control" id="producto-categoria" placeholder="Ej: Electrónica" required />
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-6 mb-3">
+                                            <label for="producto-precio" class="form-label">Precio</label>
+                                            <div class="input-group">
+                                                <span class="input-group-text">$</span>
+                                                <input type="number" class="form-control" id="producto-precio" placeholder="0.00" step="0.01" required />
+                                            </div>
+                                        </div>
+                                        <div class="col-6 mb-3">
+                                            <label for="producto-stock" class="form-label">Stock</label>
+                                            <input type="number" class="form-control" id="producto-stock" placeholder="0" required />
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="producto-imagen" class="form-label">URL de Imagen</label>
+                                        <input type="text" class="form-control" id="producto-imagen" placeholder="https://ejemplo.com/imagen.jpg" />
+                                    </div>
+                                    <div class="d-grid gap-2">
+                                        <button type="submit" class="btn btn-success">
+                                            <i class="bi bi-save me-2"></i>Guardar Producto
+                                        </button>
+                                        <button type="button" id="cancelar-edicion-producto" class="btn btn-outline-secondary">
+                                            <i class="bi bi-x-circle me-2"></i>Cancelar
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-8">
+                        <div class="card shadow-sm">
+                            <div class="card-header bg-light">
+                                <h5 class="mb-0">
+                                    <i class="bi bi-box-seam me-2"></i>Lista de Productos
+                                </h5>
+                            </div>
+                            <div class="card-body p-0">
+                                <div class="table-responsive">
+                                    <table class="table table-hover mb-0">
+                                        <thead class="table-dark">
+                                            <tr>
+                                                <th width="80">Imagen</th>
+                                                <th>Nombre</th>
+                                                <th>Categoría</th>
+                                                <th>Precio</th>
+                                                <th>Stock</th>
+                                                <th width="120">Acciones</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="productos-list">
+                                            <tr>
+                                                <td colspan="6" class="text-center text-muted py-4">
+                                                    <i class="bi bi-hourglass-split me-2"></i>Cargando productos...
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pedidos Tab -->
+            <div class="tab-pane fade" id="pedidos" role="tabpanel">
+                <div class="row mt-3">
+                    <div class="col-md-5">
+                        <div class="card shadow-sm">
+                            <div class="card-header bg-warning text-dark">
+                                <h5 class="mb-0" id="pedido-form-title">
+                                    <i class="bi bi-cart-plus me-2"></i>Crear Pedido
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <form id="pedido-form">
+                                    <input type="hidden" id="pedido-id" />
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label for="pedido-cliente" class="form-label">Cliente</label>
+                                            <select id="pedido-cliente" class="form-select" required>
+                                                <option value="">Seleccionar cliente...</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label for="pedido-fecha" class="form-label">Fecha</label>
+                                            <input type="date" class="form-control" id="pedido-fecha" required />
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="pedido-estado" class="form-label">Estado</label>
+                                        <select id="pedido-estado" class="form-select" required>
+                                            <option value="Pendiente">Pendiente</option>
+                                            <option value="En Proceso">En Proceso</option>
+                                            <option value="Enviado">Enviado</option>
+                                            <option value="Entregado">Entregado</option>
+                                            <option value="Cancelado">Cancelado</option>
+                                        </select>
+                                    </div>
+
+                                    <hr>
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <h6 class="mb-0">Productos del Pedido</h6>
+                                        <button type="button" id="agregar-producto-al-pedido" class="btn btn-success btn-sm">
+                                            <i class="bi bi-plus-circle me-1"></i>Agregar
+                                        </button>
+                                    </div>
+                                    <div id="pedido-productos-wrapper" class="mb-3">
+                                        <!-- Productos se agregarán dinámicamente aquí -->
+                                    </div>
+
+                                    <div class="border-top pt-3">
+                                        <div class="d-flex justify-content-between align-items-center mb-3">
+                                            <h5 class="mb-0">Total:</h5>
+                                            <span id="pedido-total" class="h4 text-primary mb-0">$0.00</span>
+                                        </div>
+                                        <div class="d-grid gap-2">
+                                            <button type="submit" class="btn btn-warning">
+                                                <i class="bi bi-save me-2"></i>Guardar Pedido
+                                            </button>
+                                            <button type="button" id="cancelar-edicion-pedido" class="btn btn-outline-secondary">
+                                                <i class="bi bi-x-circle me-2"></i>Cancelar
+                                            </button>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-7">
+                        <div class="card shadow-sm">
+                            <div class="card-header bg-light">
+                                <h5 class="mb-0">
+                                    <i class="bi bi-cart-check me-2"></i>Lista de Pedidos
+                                </h5>
+                            </div>
+                            <div class="card-body p-0">
+                                <div class="table-responsive">
+                                    <table class="table table-hover mb-0">
+                                        <thead class="table-dark">
+                                            <tr>
+                                                <th>Cliente</th>
+                                                <th>Fecha</th>
+                                                <th>Total</th>
+                                                <th>Estado</th>
+                                                <th>Productos</th>
+                                                <th width="120">Acciones</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="pedidos-list">
+                                            <tr>
+                                                <td colspan="6" class="text-center text-muted py-4">
+                                                    <i class="bi bi-hourglass-split me-2"></i>Cargando pedidos...
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- BCrypt JS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bcryptjs/2.4.3/bcrypt.min.js"></script>
     <script src="crud.js"></script>
   </body>
