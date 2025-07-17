@@ -78,29 +78,10 @@ async function submitClienteForm(e) {
   const teléfono = form["cliente-telefono"].value;
   const password = form["cliente-password"].value;
 
-  let contraseña_cifrada = "";
-
-  // Verificar que bcrypt esté disponible
-  if (typeof bcrypt === 'undefined') {
-    alert('Error: La biblioteca de cifrado no está disponible. Recarga la página.');
-    console.error('bcrypt no está definido. Verifica que la biblioteca esté cargada.');
+  // Validar que se proporcione contraseña para nuevos clientes
+  if (!id && !password) {
+    alert("Por favor, ingresa una contraseña para el nuevo cliente.");
     return;
-  }
-
-  // Si hay password, cifrar con bcryptjs (en el navegador)
-  if (password) {
-    try {
-      const salt = bcrypt.genSaltSync(10);
-      contraseña_cifrada = bcrypt.hashSync(password, salt);
-    } catch (error) {
-      console.error('Error al cifrar la contraseña:', error);
-      alert('Error al procesar la contraseña. Inténtalo de nuevo.');
-      return;
-    }
-  } else if (id) {
-    // Si es edición y no se cambió la password, mantener la anterior
-    const cliente = window._clientes.find((cli) => cli._id == id);
-    if (cliente) contraseña_cifrada = cliente.contraseña_cifrada || "";
   }
 
   const data = {
@@ -108,8 +89,12 @@ async function submitClienteForm(e) {
     correo,
     dirección,
     teléfono,
-    contraseña_cifrada,
   };
+
+  // Solo enviar la contraseña si se proporciona
+  if (password) {
+    data.password = password; // El backend se encargará del cifrado
+  }
 
   try {
     let response;
@@ -230,17 +215,23 @@ async function submitProductoForm(e) {
         body: JSON.stringify(data),
       });
     }
-    
+
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+      throw new Error(
+        errorData.error || `HTTP error! status: ${response.status}`
+      );
     }
-    
+
     await loadProductos();
     resetForm(form);
-    alert(id ? 'Producto actualizado correctamente' : 'Producto creado correctamente');
+    alert(
+      id
+        ? "Producto actualizado correctamente"
+        : "Producto creado correctamente"
+    );
   } catch (error) {
-    console.error('Error al guardar producto:', error);
+    console.error("Error al guardar producto:", error);
     alert(`Error al guardar producto: ${error.message}`);
   }
 }
@@ -331,17 +322,21 @@ async function submitPedidoForm(e) {
         body: JSON.stringify(data),
       });
     }
-    
+
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+      throw new Error(
+        errorData.error || `HTTP error! status: ${response.status}`
+      );
     }
-    
+
     await loadPedidos();
     resetForm(form);
-    alert(id ? 'Pedido actualizado correctamente' : 'Pedido creado correctamente');
+    alert(
+      id ? "Pedido actualizado correctamente" : "Pedido creado correctamente"
+    );
   } catch (error) {
-    console.error('Error al guardar pedido:', error);
+    console.error("Error al guardar pedido:", error);
     alert(`Error al guardar pedido: ${error.message}`);
   }
 }
@@ -372,15 +367,7 @@ document.getElementById("cancelar-edicion-pedido").onclick = function () {
 
 /* ========== INICIALIZACIÓN ========== */
 window.onload = function () {
-  // Verificar que bcrypt esté disponible
-  if (typeof bcrypt === 'undefined') {
-    console.error('❌ bcrypt no está disponible. Verifica la conexión a internet y recarga la página.');
-    alert('Error: No se pudo cargar la biblioteca de cifrado. Verifica tu conexión a internet y recarga la página.');
-    return;
-  } else {
-    console.log('✅ bcrypt cargado correctamente');
-  }
-  
+  console.log("✅ Aplicación cargada correctamente - Cifrado en backend");
   loadClientes();
   loadProductos();
   loadPedidos();
