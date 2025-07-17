@@ -1,5 +1,7 @@
 // URL base de la API (ajusta si es necesario)
-const API = "http://localhost:3000/api";
+// Para AWS: cambiar por la IP pública o dominio de tu instancia
+// Ejemplo: "http://18.XXX.XXX.XXX:3000/api" o "https://tu-dominio.com/api"
+const API = "http://34.201.128.1:3000/api"; // ✅ IP de tu instancia AWS con PM2
 
 window._clientes = [];
 window._productos = [];
@@ -149,10 +151,18 @@ function renderProductos(productos) {
 }
 
 async function loadProductos() {
-  const res = await fetch(`${API}/productos`);
-  const productos = await res.json();
-  window._productos = productos;
-  renderProductos(productos);
+  try {
+    const res = await fetch(`${API}/productos`);
+    if (!res.ok) {
+      throw new Error(`HTTP error! status: ${res.status}`);
+    }
+    const productos = await res.json();
+    window._productos = productos;
+    renderProductos(productos);
+  } catch (error) {
+    console.error("Error al cargar productos:", error);
+    alert("Error al cargar productos. Revisa la consola para más detalles.");
+  }
 }
 
 function editProducto(producto) {
@@ -192,21 +202,34 @@ async function submitProductoForm(e) {
     imagen,
   };
 
-  if (id) {
-    await fetch(`${API}/productos/${id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
-    });
-  } else {
-    await fetch(`${API}/productos`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
-    });
+  try {
+    let response;
+    if (id) {
+      response = await fetch(`${API}/productos/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+    } else {
+      response = await fetch(`${API}/productos`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+    }
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+    }
+    
+    await loadProductos();
+    resetForm(form);
+    alert(id ? 'Producto actualizado correctamente' : 'Producto creado correctamente');
+  } catch (error) {
+    console.error('Error al guardar producto:', error);
+    alert(`Error al guardar producto: ${error.message}`);
   }
-  loadProductos();
-  resetForm(form);
 }
 
 /* ========================= PEDIDOS ========================= */
@@ -230,10 +253,18 @@ function renderPedidos(pedidos) {
 }
 
 async function loadPedidos() {
-  const res = await fetch(`${API}/pedidos`);
-  const pedidos = await res.json();
-  window._pedidos = pedidos;
-  renderPedidos(pedidos);
+  try {
+    const res = await fetch(`${API}/pedidos`);
+    if (!res.ok) {
+      throw new Error(`HTTP error! status: ${res.status}`);
+    }
+    const pedidos = await res.json();
+    window._pedidos = pedidos;
+    renderPedidos(pedidos);
+  } catch (error) {
+    console.error("Error al cargar pedidos:", error);
+    alert("Error al cargar pedidos. Revisa la consola para más detalles.");
+  }
 }
 
 function editPedido(pedido) {
@@ -272,21 +303,34 @@ async function submitPedidoForm(e) {
     productos,
   };
 
-  if (id) {
-    await fetch(`${API}/pedidos/${id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
-    });
-  } else {
-    await fetch(`${API}/pedidos`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
-    });
+  try {
+    let response;
+    if (id) {
+      response = await fetch(`${API}/pedidos/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+    } else {
+      response = await fetch(`${API}/pedidos`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+    }
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+    }
+    
+    await loadPedidos();
+    resetForm(form);
+    alert(id ? 'Pedido actualizado correctamente' : 'Pedido creado correctamente');
+  } catch (error) {
+    console.error('Error al guardar pedido:', error);
+    alert(`Error al guardar pedido: ${error.message}`);
   }
-  loadPedidos();
-  resetForm(form);
 }
 
 /* ========== UTILITARIOS ========== */
