@@ -199,7 +199,11 @@ function renderProductos(productos) {
 
     tr.innerHTML = `
       <td>
-        <img src="${p.imagen ? `${API}${p.imagen}` : "https://via.placeholder.com/50?text=No+Img"}" 
+        <img src="${
+          p.imagen
+            ? `${API}${p.imagen.startsWith("/") ? "" : "/"}${p.imagen}`
+            : "https://via.placeholder.com/50?text=No+Img"
+        }" 
              alt="${p.nombre}" class="producto-img" 
              onerror="this.src='https://via.placeholder.com/50?text=No+Img'">
       </td>
@@ -252,16 +256,18 @@ function editProducto(producto) {
   document.getElementById("producto-categoria").value = producto.categoría;
   document.getElementById("producto-precio").value = producto.precio;
   document.getElementById("producto-stock").value = producto.stock;
-  
+
   // Limpiar el input de archivo (no se puede preseleccionar archivos por seguridad)
   document.getElementById("producto-imagen").value = "";
-  
+
   // Mostrar imagen actual si existe
   const imagenPreview = document.getElementById("imagen-preview");
   const imagenActual = document.getElementById("imagen-actual");
-  
+
   if (producto.imagen) {
-    imagenActual.src = `${API}${producto.imagen}`;
+    imagenActual.src = `${API}${producto.imagen.startsWith("/") ? "" : "/"}${
+      producto.imagen
+    }`;
     imagenPreview.classList.remove("d-none");
   } else {
     imagenPreview.classList.add("d-none");
@@ -284,24 +290,24 @@ async function submitProductoForm(e) {
   e.preventDefault();
   const form = e.target;
   const id = form["producto-id"].value;
-  
+
   // Usar FormData para enviar archivos
   const formData = new FormData();
-  formData.append('nombre', form["producto-nombre"].value);
-  formData.append('descripcion', form["producto-descripcion"].value);
-  formData.append('categoria', form["producto-categoria"].value);
-  formData.append('precio', Number(form["producto-precio"].value));
-  formData.append('stock', Number(form["producto-stock"].value));
-  
+  formData.append("nombre", form["producto-nombre"].value);
+  formData.append("descripcion", form["producto-descripcion"].value);
+  formData.append("categoria", form["producto-categoria"].value);
+  formData.append("precio", Number(form["producto-precio"].value));
+  formData.append("stock", Number(form["producto-stock"].value));
+
   // Agregar archivo de imagen si existe
   const imagenFile = form["producto-imagen"].files[0];
   if (imagenFile) {
-    formData.append('imagen', imagenFile);
+    formData.append("imagen", imagenFile);
   }
 
   // Si es edición, agregar el ID
   if (id) {
-    formData.append('producto_id', id);
+    formData.append("producto_id", id);
   }
 
   try {
