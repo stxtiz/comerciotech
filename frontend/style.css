@@ -179,6 +179,29 @@ body {
   padding: 10px;
 }
 
+/* Estilos para el detalle de productos en la tabla de pedidos */
+.productos-detalle {
+  font-size: 0.85rem;
+}
+
+.productos-detalle .d-flex {
+  border-bottom: 1px solid #f0f0f0;
+  padding: 2px 0;
+}
+
+.productos-detalle .d-flex:last-child {
+  border-bottom: none;
+}
+
+.productos-detalle .text-truncate {
+  font-size: 0.8rem;
+}
+
+.productos-detalle .badge {
+  font-size: 0.7rem;
+  min-width: 25px;
+}
+
 .producto-item label {
   margin-bottom: 2px;
   font-size: 12px;

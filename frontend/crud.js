@@ -364,6 +364,28 @@ function renderPedidos(pedidos) {
         estadoBadge = '<span class="badge bg-secondary">Desconocido</span>';
     }
 
+    // Crear información detallada de productos
+    let productosInfo = "";
+    if (p.productos && p.productos.length > 0) {
+      const productosDetalle = p.productos.map(prod => {
+        const nombreProducto = prod.producto_id?.nombre || `ID: ${prod.producto_id}`;
+        return `<div class="d-flex justify-content-between align-items-center mb-1">
+          <small class="text-truncate me-2" style="max-width: 140px;" title="${nombreProducto}">
+            <strong>${nombreProducto}</strong>
+          </small>
+          <span class="badge bg-primary rounded-pill">${prod.cantidad}</span>
+        </div>`;
+      }).join("");
+      
+      productosInfo = `
+        <div class="productos-detalle" style="max-height: 120px; overflow-y: auto;">
+          ${productosDetalle}
+        </div>
+      `;
+    } else {
+      productosInfo = `<span class="text-muted">No hay productos</span>`;
+    }
+
     tr.innerHTML = `
       <td>
         <div class="d-flex align-items-center">
@@ -376,8 +398,8 @@ function renderPedidos(pedidos) {
       <td>${fechaFormateada}</td>
       <td><strong class="text-success">$${p.total.toFixed(2)}</strong></td>
       <td>${estadoBadge}</td>
-      <td class="text-center">
-        <span class="badge bg-secondary">${p.productos?.length || 0}</span>
+      <td>
+        ${productosInfo}
       </td>
       <td>
         <div class="btn-group" role="group">
