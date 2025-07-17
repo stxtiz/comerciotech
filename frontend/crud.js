@@ -367,16 +367,19 @@ function renderPedidos(pedidos) {
     // Crear información detallada de productos
     let productosInfo = "";
     if (p.productos && p.productos.length > 0) {
-      const productosDetalle = p.productos.map(prod => {
-        const nombreProducto = prod.producto_id?.nombre || `ID: ${prod.producto_id}`;
-        return `<div class="d-flex justify-content-between align-items-center mb-1">
+      const productosDetalle = p.productos
+        .map((prod) => {
+          const nombreProducto =
+            prod.producto_id?.nombre || `ID: ${prod.producto_id}`;
+          return `<div class="d-flex justify-content-between align-items-center mb-1">
           <small class="text-truncate me-2" style="max-width: 140px;" title="${nombreProducto}">
             <strong>${nombreProducto}</strong>
           </small>
           <span class="badge bg-primary rounded-pill">${prod.cantidad}</span>
         </div>`;
-      }).join("");
-      
+        })
+        .join("");
+
       productosInfo = `
         <div class="productos-detalle" style="max-height: 120px; overflow-y: auto;">
           ${productosDetalle}

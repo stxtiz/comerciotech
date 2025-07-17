@@ -180,39 +180,66 @@ app.post("/api/pedidos", async (req, res) => {
     }
 
     // Convertir cliente_id si viene como string desde el frontend
-    if (req.body.cliente) {
-      req.body.cliente_id = Number(req.body.cliente);
-      delete req.body.cliente;
+    if (req.body.cliente_id) {
+      req.body.cliente_id = Number(req.body.cliente_id);
+    }
+
+    // Limpiar y validar productos
+    if (req.body.productos && Array.isArray(req.body.productos)) {
+      req.body.productos = req.body.productos.map((producto) => ({
+        producto_id: Number(producto.producto_id),
+        cantidad: Number(producto.cantidad),
+        precio_unitario: Number(producto.precio_unitario),
+      }));
     }
 
     const pedido = await Pedido.create(req.body);
-    res.json(pedido);
+    const pedidoPopulado = await Pedido.findById(pedido._id)
+      .populate("cliente_id")
+      .populate("productos.producto_id");
+
+    res.json(pedidoPopulado);
   } catch (error) {
     console.error("Error al crear pedido:", error);
-    res.status(500).json({ error: "Error al crear pedido" });
+    res
+      .status(500)
+      .json({ error: "Error al crear pedido", details: error.message });
   }
 });
 
 app.put("/api/pedidos/:id", async (req, res) => {
   try {
     // Convertir cliente_id si viene como string desde el frontend
-    if (req.body.cliente) {
-      req.body.cliente_id = Number(req.body.cliente);
-      delete req.body.cliente;
+    if (req.body.cliente_id) {
+      req.body.cliente_id = Number(req.body.cliente_id);
+    }
+
+    // Limpiar y validar productos
+    if (req.body.productos && Array.isArray(req.body.productos)) {
+      req.body.productos = req.body.productos.map((producto) => ({
+        producto_id: Number(producto.producto_id),
+        cantidad: Number(producto.cantidad),
+        precio_unitario: Number(producto.precio_unitario),
+      }));
     }
 
     const pedido = await Pedido.findOneAndUpdate(
       { _id: Number(req.params.id) },
       req.body,
       { new: true }
-    );
+    )
+      .populate("cliente_id")
+      .populate("productos.producto_id");
+
     if (!pedido) {
       return res.status(404).json({ error: "Pedido no encontrado" });
     }
     res.json(pedido);
   } catch (error) {
     console.error("Error al actualizar pedido:", error);
-    res.status(500).json({ error: "Error al actualizar pedido" });
+    res
+      .status(500)
+      .json({ error: "Error al actualizar pedido", details: error.message });
   }
 });
 

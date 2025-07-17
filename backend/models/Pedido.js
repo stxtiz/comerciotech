@@ -8,6 +8,7 @@ const pedidoSchema = new mongoose.Schema({
   estado: String,
   productos: [
     {
+      _id: false, // Desactivar ObjectId automático
       producto_id: { type: Number, ref: "Producto" },
       cantidad: Number,
       precio_unitario: Number,
