@@ -1,5 +1,5 @@
 // URL base de la API (ajusta si es necesario)
-const API = "/api";
+const API = "http://localhost:3000/api";
 
 window._clientes = [];
 window._productos = [];
@@ -24,11 +24,19 @@ function renderClientes(clientes) {
 }
 
 async function loadClientes() {
-  const res = await fetch(`${API}/clientes`);
-  const clientes = await res.json();
-  window._clientes = clientes;
-  renderClientes(clientes);
-  renderClientesSelect(clientes);
+  try {
+    const res = await fetch(`${API}/clientes`);
+    if (!res.ok) {
+      throw new Error(`HTTP error! status: ${res.status}`);
+    }
+    const clientes = await res.json();
+    window._clientes = clientes;
+    renderClientes(clientes);
+    renderClientesSelect(clientes);
+  } catch (error) {
+    console.error("Error al cargar clientes:", error);
+    alert("Error al cargar clientes. Revisa la consola para más detalles.");
+  }
 }
 
 function renderClientesSelect(clientes) {
@@ -88,21 +96,38 @@ async function submitClienteForm(e) {
     contraseña_cifrada,
   };
 
-  if (id) {
-    await fetch(`${API}/clientes/${id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
-    });
-  } else {
-    await fetch(`${API}/clientes`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
-    });
+  try {
+    let response;
+    if (id) {
+      response = await fetch(`${API}/clientes/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+    } else {
+      response = await fetch(`${API}/clientes`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+    }
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(
+        errorData.error || `HTTP error! status: ${response.status}`
+      );
+    }
+
+    await loadClientes();
+    resetForm(form);
+    alert(
+      id ? "Cliente actualizado correctamente" : "Cliente creado correctamente"
+    );
+  } catch (error) {
+    console.error("Error al guardar cliente:", error);
+    alert(`Error al guardar cliente: ${error.message}`);
   }
-  loadClientes();
-  resetForm(form);
 }
 
 /* ========================= PRODUCTOS ========================= */

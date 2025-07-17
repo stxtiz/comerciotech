@@ -7,10 +7,14 @@ const clientes = require("./comerciotech.Clientes.json");
 const productos = require("./comerciotech.Productos.json");
 const pedidos = require("./comerciotech.Pedidos.json");
 
-mongoose.connect("mongodb://localhost:27017/comerciotech", {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-});
+mongoose.connect(
+  "mongodb://myUserAdmin:Ventana%23123@localhost:27017/comerciotech",
+  {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+    authSource: "admin",
+  }
+);
 
 async function seed() {
   await Cliente.deleteMany();
