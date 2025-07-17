@@ -169,10 +169,18 @@ async function submitClienteForm(e) {
 
 /* ========================= PRODUCTOS ========================= */
 function renderProductos(productos) {
+  console.log("🎨 Renderizando productos:", productos.length);
   const tbody = document.getElementById("productos-list");
+
+  if (!tbody) {
+    console.error("❌ No se encontró el elemento con ID 'productos-list'");
+    return;
+  }
+
   tbody.innerHTML = "";
 
   if (productos.length === 0) {
+    console.log("⚠️ No hay productos para mostrar");
     tbody.innerHTML = `
       <tr>
         <td colspan="6" class="text-center text-muted py-4">
@@ -183,7 +191,12 @@ function renderProductos(productos) {
     return;
   }
 
-  productos.forEach((p) => {
+  productos.forEach((p, index) => {
+    console.log(
+      `📦 Renderizando producto ${index + 1}:`,
+      p.nombre,
+      `Imagen: ${p.imagen || "Sin imagen"}`
+    );
     const tr = document.createElement("tr");
     tr.className = "fade-in";
 
@@ -202,10 +215,12 @@ function renderProductos(productos) {
         <img src="${
           p.imagen
             ? `${API}${p.imagen.startsWith("/") ? "" : "/"}${p.imagen}`
-            : "https://via.placeholder.com/50?text=No+Img"
+            : "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='50' height='50' viewBox='0 0 50 50'%3E%3Crect width='50' height='50' fill='%23f8f9fa'/%3E%3Ctext x='25' y='25' text-anchor='middle' dy='.35em' font-family='Arial' font-size='10' fill='%236c757d'%3EImg%3C/text%3E%3C/svg%3E"
         }" 
              alt="${p.nombre}" class="producto-img" 
-             onerror="this.src='https://via.placeholder.com/50?text=No+Img'">
+             onerror="console.log('❌ Error cargando imagen para:', '${
+               p.nombre
+             }'); this.src='data:image/svg+xml,%3Csvg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'50\\' height=\\'50\\' viewBox=\\'0 0 50 50\\'%3E%3Crect width=\\'50\\' height=\\'50\\' fill=\\'%23f8f9fa\\'/%3E%3Ctext x=\\'25\\' y=\\'25\\' text-anchor=\\'middle\\' dy=\\'.35em\\' font-family=\\'Arial\\' font-size=\\'10\\' fill=\\'%236c757d\\'%3EImg%3C/text%3E%3C/svg%3E'; this.onerror=null;">
       </td>
       <td>
         <strong>${p.nombre}</strong><br>
@@ -231,18 +246,23 @@ function renderProductos(productos) {
     `;
     tbody.appendChild(tr);
   });
+
+  console.log("✅ Productos renderizados correctamente en el DOM");
 }
 
 async function loadProductos() {
   try {
+    console.log("🔄 Cargando productos desde:", `${API}/productos`);
     const res = await fetch(`${API}/productos`);
     if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
     const productos = await res.json();
+    console.log("✅ Productos cargados:", productos.length, "productos");
+    console.log("📄 Datos de productos:", productos);
     window._productos = productos;
     renderProductos(productos);
     renderProductosSelect();
   } catch (error) {
-    console.error("Error al cargar productos:", error);
+    console.error("❌ Error al cargar productos:", error);
     alert("Error al cargar productos. Revisa la consola para más detalles.");
   }
 }
@@ -823,20 +843,35 @@ window.eliminarProductoDelPedido = eliminarProductoDelPedido;
 /* ========== INICIALIZACIÓN ========== */
 window.onload = function () {
   console.log("✅ Aplicación cargada correctamente - Diseño Bootstrap");
+  console.log("🔍 Verificando elementos del DOM...");
+
+  // Verificar que existen los elementos necesarios
+  const clientesList = document.getElementById("clientes-list");
+  const productosList = document.getElementById("productos-list");
+  const pedidosList = document.getElementById("pedidos-list");
+
+  console.log("📋 Elementos encontrados:");
+  console.log("- clientes-list:", clientesList ? "✅" : "❌");
+  console.log("- productos-list:", productosList ? "✅" : "❌");
+  console.log("- pedidos-list:", pedidosList ? "✅" : "❌");
 
   // Establecer fecha actual por defecto
-  document.getElementById("pedido-fecha").value = new Date()
-    .toISOString()
-    .split("T")[0];
+  const pedidoFecha = document.getElementById("pedido-fecha");
+  if (pedidoFecha) {
+    pedidoFecha.value = new Date().toISOString().split("T")[0];
+    console.log("📅 Fecha por defecto establecida");
+  }
 
   // Cargar datos
+  console.log("🚀 Iniciando carga de datos...");
   loadClientes();
   loadProductos()
     .then(() => {
+      console.log("📦 Productos cargados, ahora cargando pedidos...");
       loadPedidos();
     })
     .catch((error) => {
-      console.error("Error al cargar productos:", error);
+      console.error("❌ Error al cargar productos:", error);
       loadPedidos();
     });
 };
