@@ -102,42 +102,135 @@ app.delete("/api/clientes/:id", async (req, res) => {
 
 // CRUD Productos
 app.get("/api/productos", async (_, res) => {
-  res.json(await Producto.find());
+  try {
+    const productos = await Producto.find();
+    res.json(productos);
+  } catch (error) {
+    console.error("Error al obtener productos:", error);
+    res.status(500).json({ error: "Error al obtener productos" });
+  }
 });
+
 app.post("/api/productos", async (req, res) => {
-  res.json(await Producto.create(req.body));
+  try {
+    // Generar ID automáticamente si no existe
+    if (!req.body._id) {
+      const lastProducto = await Producto.findOne().sort({ _id: -1 });
+      req.body._id = lastProducto ? lastProducto._id + 1 : 1;
+    }
+    const producto = await Producto.create(req.body);
+    res.json(producto);
+  } catch (error) {
+    console.error("Error al crear producto:", error);
+    res.status(500).json({ error: "Error al crear producto" });
+  }
 });
+
 app.put("/api/productos/:id", async (req, res) => {
-  res.json(
-    await Producto.findOneAndUpdate({ _id: Number(req.params.id) }, req.body, {
-      new: true,
-    })
-  );
+  try {
+    const producto = await Producto.findOneAndUpdate(
+      { _id: Number(req.params.id) },
+      req.body,
+      { new: true }
+    );
+    if (!producto) {
+      return res.status(404).json({ error: "Producto no encontrado" });
+    }
+    res.json(producto);
+  } catch (error) {
+    console.error("Error al actualizar producto:", error);
+    res.status(500).json({ error: "Error al actualizar producto" });
+  }
 });
+
 app.delete("/api/productos/:id", async (req, res) => {
-  res.json(await Producto.findOneAndDelete({ _id: Number(req.params.id) }));
+  try {
+    const producto = await Producto.findOneAndDelete({
+      _id: Number(req.params.id),
+    });
+    if (!producto) {
+      return res.status(404).json({ error: "Producto no encontrado" });
+    }
+    res.json(producto);
+  } catch (error) {
+    console.error("Error al eliminar producto:", error);
+    res.status(500).json({ error: "Error al eliminar producto" });
+  }
 });
 
 // CRUD Pedidos
 app.get("/api/pedidos", async (_, res) => {
-  res.json(
-    await Pedido.find().populate("cliente_id").populate("productos.producto_id")
-  );
-});
-app.post("/api/pedidos", async (req, res) => {
-  res.json(await Pedido.create(req.body));
-});
-app.put("/api/pedidos/:id", async (req, res) => {
-  res.json(
-    await Pedido.findOneAndUpdate({ _id: Number(req.params.id) }, req.body, {
-      new: true,
-    })
-  );
-});
-app.delete("/api/pedidos/:id", async (req, res) => {
-  res.json(await Pedido.findOneAndDelete({ _id: Number(req.params.id) }));
+  try {
+    const pedidos = await Pedido.find()
+      .populate("cliente_id")
+      .populate("productos.producto_id");
+    res.json(pedidos);
+  } catch (error) {
+    console.error("Error al obtener pedidos:", error);
+    res.status(500).json({ error: "Error al obtener pedidos" });
+  }
 });
 
-app.listen(3000, () => {
-  console.log("API corriendo en http://localhost:3000");
+app.post("/api/pedidos", async (req, res) => {
+  try {
+    // Generar ID automáticamente si no existe
+    if (!req.body._id) {
+      const lastPedido = await Pedido.findOne().sort({ _id: -1 });
+      req.body._id = lastPedido ? lastPedido._id + 1 : 1;
+    }
+
+    // Convertir cliente_id si viene como string desde el frontend
+    if (req.body.cliente) {
+      req.body.cliente_id = Number(req.body.cliente);
+      delete req.body.cliente;
+    }
+
+    const pedido = await Pedido.create(req.body);
+    res.json(pedido);
+  } catch (error) {
+    console.error("Error al crear pedido:", error);
+    res.status(500).json({ error: "Error al crear pedido" });
+  }
+});
+
+app.put("/api/pedidos/:id", async (req, res) => {
+  try {
+    // Convertir cliente_id si viene como string desde el frontend
+    if (req.body.cliente) {
+      req.body.cliente_id = Number(req.body.cliente);
+      delete req.body.cliente;
+    }
+
+    const pedido = await Pedido.findOneAndUpdate(
+      { _id: Number(req.params.id) },
+      req.body,
+      { new: true }
+    );
+    if (!pedido) {
+      return res.status(404).json({ error: "Pedido no encontrado" });
+    }
+    res.json(pedido);
+  } catch (error) {
+    console.error("Error al actualizar pedido:", error);
+    res.status(500).json({ error: "Error al actualizar pedido" });
+  }
+});
+
+app.delete("/api/pedidos/:id", async (req, res) => {
+  try {
+    const pedido = await Pedido.findOneAndDelete({
+      _id: Number(req.params.id),
+    });
+    if (!pedido) {
+      return res.status(404).json({ error: "Pedido no encontrado" });
+    }
+    res.json(pedido);
+  } catch (error) {
+    console.error("Error al eliminar pedido:", error);
+    res.status(500).json({ error: "Error al eliminar pedido" });
+  }
+});
+
+app.listen(3000, "0.0.0.0", () => {
+  console.log("API corriendo en http://0.0.0.0:3000");
 });
