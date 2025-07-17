@@ -1,5 +1,5 @@
 // URL base de la API
-const API = "http://34.201.128.1:3000/api";
+const API = "http://23.23.80.50:3000/api";
 
 // Variables globales para almacenar datos
 window._clientes = [];
@@ -13,7 +13,7 @@ let productosDelPedido = [];
 function renderClientes(clientes) {
   const tbody = document.getElementById("clientes-list");
   tbody.innerHTML = "";
-  
+
   if (clientes.length === 0) {
     tbody.innerHTML = `
       <tr>
@@ -42,10 +42,14 @@ function renderClientes(clientes) {
       <td>${c.teléfono}</td>
       <td>
         <div class="btn-group" role="group">
-          <button class="btn btn-warning btn-sm" onclick='editCliente(${JSON.stringify(c)})' title="Editar">
+          <button class="btn btn-warning btn-sm" onclick='editCliente(${JSON.stringify(
+            c
+          )})' title="Editar">
             <i class="bi bi-pencil-square"></i>
           </button>
-          <button class="btn btn-danger btn-sm" onclick="deleteCliente('${c._id}')" title="Eliminar">
+          <button class="btn btn-danger btn-sm" onclick="deleteCliente('${
+            c._id
+          }')" title="Eliminar">
             <i class="bi bi-trash"></i>
           </button>
         </div>
@@ -83,14 +87,16 @@ function renderClientesSelect(clientes) {
 }
 
 function editCliente(cliente) {
-  document.getElementById("cliente-form-title").innerHTML = '<i class="bi bi-person-gear me-2"></i>Editar Cliente';
+  document.getElementById("cliente-form-title").innerHTML =
+    '<i class="bi bi-person-gear me-2"></i>Editar Cliente';
   document.getElementById("cliente-id").value = cliente._id;
   document.getElementById("cliente-nombre").value = cliente.nombre;
   document.getElementById("cliente-correo").value = cliente.correo;
   document.getElementById("cliente-direccion").value = cliente.dirección;
   document.getElementById("cliente-telefono").value = cliente.teléfono;
   document.getElementById("cliente-password").value = "";
-  document.getElementById("cliente-password").placeholder = "Dejar vacío para no cambiar";
+  document.getElementById("cliente-password").placeholder =
+    "Dejar vacío para no cambiar";
   document.getElementById("cliente-password").required = false;
 }
 
@@ -145,12 +151,16 @@ async function submitClienteForm(e) {
 
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+      throw new Error(
+        errorData.error || `HTTP error! status: ${response.status}`
+      );
     }
 
     await loadClientes();
     resetForm(form);
-    alert(id ? "Cliente actualizado correctamente" : "Cliente creado correctamente");
+    alert(
+      id ? "Cliente actualizado correctamente" : "Cliente creado correctamente"
+    );
   } catch (error) {
     console.error("Error al guardar cliente:", error);
     alert(`Error al guardar cliente: ${error.message}`);
@@ -161,7 +171,7 @@ async function submitClienteForm(e) {
 function renderProductos(productos) {
   const tbody = document.getElementById("productos-list");
   tbody.innerHTML = "";
-  
+
   if (productos.length === 0) {
     tbody.innerHTML = `
       <tr>
@@ -176,7 +186,7 @@ function renderProductos(productos) {
   productos.forEach((p) => {
     const tr = document.createElement("tr");
     tr.className = "fade-in";
-    
+
     // Determinar color del badge según stock
     let stockBadge = "";
     if (p.stock === 0) {
@@ -189,7 +199,7 @@ function renderProductos(productos) {
 
     tr.innerHTML = `
       <td>
-        <img src="${p.imagen || 'https://via.placeholder.com/50?text=No+Img'}" 
+        <img src="${p.imagen || "https://via.placeholder.com/50?text=No+Img"}" 
              alt="${p.nombre}" class="producto-img" 
              onerror="this.src='https://via.placeholder.com/50?text=No+Img'">
       </td>
@@ -202,10 +212,14 @@ function renderProductos(productos) {
       <td>${stockBadge}</td>
       <td>
         <div class="btn-group" role="group">
-          <button class="btn btn-warning btn-sm" onclick='editProducto(${JSON.stringify(p)})' title="Editar">
+          <button class="btn btn-warning btn-sm" onclick='editProducto(${JSON.stringify(
+            p
+          )})' title="Editar">
             <i class="bi bi-pencil-square"></i>
           </button>
-          <button class="btn btn-danger btn-sm" onclick="deleteProducto('${p._id}')" title="Eliminar">
+          <button class="btn btn-danger btn-sm" onclick="deleteProducto('${
+            p._id
+          }')" title="Eliminar">
             <i class="bi bi-trash"></i>
           </button>
         </div>
@@ -230,7 +244,8 @@ async function loadProductos() {
 }
 
 function editProducto(producto) {
-  document.getElementById("producto-form-title").innerHTML = '<i class="bi bi-box-seam-gear me-2"></i>Editar Producto';
+  document.getElementById("producto-form-title").innerHTML =
+    '<i class="bi bi-box-seam-gear me-2"></i>Editar Producto';
   document.getElementById("producto-id").value = producto._id;
   document.getElementById("producto-nombre").value = producto.nombre;
   document.getElementById("producto-descripcion").value = producto.descripción;
@@ -283,12 +298,18 @@ async function submitProductoForm(e) {
 
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+      throw new Error(
+        errorData.error || `HTTP error! status: ${response.status}`
+      );
     }
 
     await loadProductos();
     resetForm(form);
-    alert(id ? "Producto actualizado correctamente" : "Producto creado correctamente");
+    alert(
+      id
+        ? "Producto actualizado correctamente"
+        : "Producto creado correctamente"
+    );
   } catch (error) {
     console.error("Error al guardar producto:", error);
     alert(`Error al guardar producto: ${error.message}`);
@@ -299,7 +320,7 @@ async function submitProductoForm(e) {
 function renderPedidos(pedidos) {
   const tbody = document.getElementById("pedidos-list");
   tbody.innerHTML = "";
-  
+
   if (pedidos.length === 0) {
     tbody.innerHTML = `
       <tr>
@@ -314,19 +335,33 @@ function renderPedidos(pedidos) {
   pedidos.forEach((p) => {
     const tr = document.createElement("tr");
     tr.className = "fade-in";
-    
+
     const clienteNombre = p.cliente_id?.nombre || `ID: ${p.cliente_id}`;
-    const fechaFormateada = p.fecha ? new Date(p.fecha).toLocaleDateString() : "N/A";
-    
+    const fechaFormateada = p.fecha
+      ? new Date(p.fecha).toLocaleDateString()
+      : "N/A";
+
     // Badge de estado
     let estadoBadge = "";
     switch (p.estado) {
-      case 'Pendiente': estadoBadge = '<span class="badge bg-warning text-dark">Pendiente</span>'; break;
-      case 'En Proceso': estadoBadge = '<span class="badge bg-info">En Proceso</span>'; break;
-      case 'Enviado': estadoBadge = '<span class="badge bg-primary">Enviado</span>'; break;
-      case 'Entregado': estadoBadge = '<span class="badge bg-success">Entregado</span>'; break;
-      case 'Cancelado': estadoBadge = '<span class="badge bg-danger">Cancelado</span>'; break;
-      default: estadoBadge = '<span class="badge bg-secondary">Desconocido</span>';
+      case "Pendiente":
+        estadoBadge =
+          '<span class="badge bg-warning text-dark">Pendiente</span>';
+        break;
+      case "En Proceso":
+        estadoBadge = '<span class="badge bg-info">En Proceso</span>';
+        break;
+      case "Enviado":
+        estadoBadge = '<span class="badge bg-primary">Enviado</span>';
+        break;
+      case "Entregado":
+        estadoBadge = '<span class="badge bg-success">Entregado</span>';
+        break;
+      case "Cancelado":
+        estadoBadge = '<span class="badge bg-danger">Cancelado</span>';
+        break;
+      default:
+        estadoBadge = '<span class="badge bg-secondary">Desconocido</span>';
     }
 
     tr.innerHTML = `
@@ -346,10 +381,14 @@ function renderPedidos(pedidos) {
       </td>
       <td>
         <div class="btn-group" role="group">
-          <button class="btn btn-warning btn-sm" onclick='editPedido(${JSON.stringify(p)})' title="Editar">
+          <button class="btn btn-warning btn-sm" onclick='editPedido(${JSON.stringify(
+            p
+          )})' title="Editar">
             <i class="bi bi-pencil-square"></i>
           </button>
-          <button class="btn btn-danger btn-sm" onclick="deletePedido('${p._id}')" title="Eliminar">
+          <button class="btn btn-danger btn-sm" onclick="deletePedido('${
+            p._id
+          }')" title="Eliminar">
             <i class="bi bi-trash"></i>
           </button>
         </div>
@@ -364,11 +403,13 @@ function renderProductosSelect() {
   selects.forEach((select) => {
     const selectedValue = select.value;
     select.innerHTML = '<option value="">Seleccionar producto...</option>';
-    
+
     window._productos.forEach((producto) => {
       const option = document.createElement("option");
       option.value = producto._id;
-      option.textContent = `${producto.nombre} - $${producto.precio.toFixed(2)} (Stock: ${producto.stock})`;
+      option.textContent = `${producto.nombre} - $${producto.precio.toFixed(
+        2
+      )} (Stock: ${producto.stock})`;
       option.dataset.precio = producto.precio;
       option.dataset.stock = producto.stock;
       select.appendChild(option);
@@ -406,7 +447,7 @@ function agregarProductoAlPedido() {
   productosDelPedido.push({
     producto_id: "",
     cantidad: 1,
-    precio_unitario: 0
+    precio_unitario: 0,
   });
 
   // Llenar select de productos
@@ -416,8 +457,12 @@ function agregarProductoAlPedido() {
   const select = productoDiv.querySelector(".producto-select");
   const cantidadInput = productoDiv.querySelector(".producto-cantidad");
 
-  select.addEventListener("change", (e) => actualizarProductoPedido(index, "producto_id", e.target.value));
-  cantidadInput.addEventListener("input", (e) => actualizarProductoPedido(index, "cantidad", e.target.value));
+  select.addEventListener("change", (e) =>
+    actualizarProductoPedido(index, "producto_id", e.target.value)
+  );
+  cantidadInput.addEventListener("input", (e) =>
+    actualizarProductoPedido(index, "cantidad", e.target.value)
+  );
 }
 
 function actualizarProductoPedido(index, campo, valor) {
@@ -427,12 +472,16 @@ function actualizarProductoPedido(index, campo, valor) {
     productosDelPedido[index].producto_id = valor;
 
     // Actualizar precio unitario
-    const selectedOption = document.querySelector(`.producto-select[data-index="${index}"] option[value="${valor}"]`);
+    const selectedOption = document.querySelector(
+      `.producto-select[data-index="${index}"] option[value="${valor}"]`
+    );
     if (selectedOption && selectedOption.dataset.precio) {
       const precio = Number(selectedOption.dataset.precio);
       productosDelPedido[index].precio_unitario = precio;
 
-      const precioInput = document.querySelector(`.producto-precio-unitario[data-index="${index}"]`);
+      const precioInput = document.querySelector(
+        `.producto-precio-unitario[data-index="${index}"]`
+      );
       precioInput.value = `$${precio.toFixed(2)}`;
     }
   } else if (campo === "cantidad") {
@@ -448,14 +497,18 @@ function actualizarSubtotal(index) {
   if (!producto) return;
 
   const subtotal = producto.cantidad * producto.precio_unitario;
-  const subtotalSpan = document.querySelector(`.producto-subtotal[data-index="${index}"]`);
+  const subtotalSpan = document.querySelector(
+    `.producto-subtotal[data-index="${index}"]`
+  );
   if (subtotalSpan) {
     subtotalSpan.textContent = `$${subtotal.toFixed(2)}`;
   }
 }
 
 function eliminarProductoDelPedido(index) {
-  const productoDiv = document.querySelector(`.producto-item[data-index="${index}"]`);
+  const productoDiv = document.querySelector(
+    `.producto-item[data-index="${index}"]`
+  );
   if (productoDiv) productoDiv.remove();
 
   productosDelPedido.splice(index, 1);
@@ -467,7 +520,7 @@ function reindexarProductos() {
   const productosItems = document.querySelectorAll(".producto-item");
   productosItems.forEach((item, newIndex) => {
     item.dataset.index = newIndex;
-    
+
     const select = item.querySelector(".producto-select");
     const cantidad = item.querySelector(".producto-cantidad");
     const precio = item.querySelector(".producto-precio-unitario");
@@ -477,26 +530,29 @@ function reindexarProductos() {
     if (select) {
       select.dataset.index = newIndex;
       select.removeEventListener("change", select._listener);
-      select._listener = (e) => actualizarProductoPedido(newIndex, "producto_id", e.target.value);
+      select._listener = (e) =>
+        actualizarProductoPedido(newIndex, "producto_id", e.target.value);
       select.addEventListener("change", select._listener);
     }
 
     if (cantidad) {
       cantidad.dataset.index = newIndex;
       cantidad.removeEventListener("input", cantidad._listener);
-      cantidad._listener = (e) => actualizarProductoPedido(newIndex, "cantidad", e.target.value);
+      cantidad._listener = (e) =>
+        actualizarProductoPedido(newIndex, "cantidad", e.target.value);
       cantidad.addEventListener("input", cantidad._listener);
     }
 
     if (precio) precio.dataset.index = newIndex;
     if (subtotal) subtotal.dataset.index = newIndex;
-    if (btnEliminar) btnEliminar.onclick = () => eliminarProductoDelPedido(newIndex);
+    if (btnEliminar)
+      btnEliminar.onclick = () => eliminarProductoDelPedido(newIndex);
   });
 }
 
 function calcularTotalPedido() {
   const total = productosDelPedido.reduce((sum, producto) => {
-    return sum + (producto.cantidad * producto.precio_unitario);
+    return sum + producto.cantidad * producto.precio_unitario;
   }, 0);
 
   const totalSpan = document.getElementById("pedido-total");
@@ -525,9 +581,11 @@ async function loadPedidos() {
 }
 
 function editPedido(pedido) {
-  document.getElementById("pedido-form-title").innerHTML = '<i class="bi bi-cart-gear me-2"></i>Editar Pedido';
+  document.getElementById("pedido-form-title").innerHTML =
+    '<i class="bi bi-cart-gear me-2"></i>Editar Pedido';
   document.getElementById("pedido-id").value = pedido._id;
-  document.getElementById("pedido-cliente").value = pedido.cliente_id?._id || pedido.cliente_id;
+  document.getElementById("pedido-cliente").value =
+    pedido.cliente_id?._id || pedido.cliente_id;
 
   if (pedido.fecha) {
     const fecha = new Date(pedido.fecha);
@@ -545,13 +603,17 @@ function editPedido(pedido) {
       const index = productosDelPedido.length - 1;
 
       setTimeout(() => {
-        const select = document.querySelector(`.producto-select[data-index="${index}"]`);
-        const cantidadInput = document.querySelector(`.producto-cantidad[data-index="${index}"]`);
-        
+        const select = document.querySelector(
+          `.producto-select[data-index="${index}"]`
+        );
+        const cantidadInput = document.querySelector(
+          `.producto-cantidad[data-index="${index}"]`
+        );
+
         if (select && cantidadInput) {
           select.value = producto.producto_id?._id || producto.producto_id;
           cantidadInput.value = producto.cantidad;
-          
+
           actualizarProductoPedido(index, "producto_id", select.value);
           actualizarProductoPedido(index, "cantidad", cantidadInput.value);
         }
@@ -599,7 +661,7 @@ async function submitPedidoForm(e) {
   }
 
   const total = productosDelPedido.reduce((sum, producto) => {
-    return sum + (producto.cantidad * producto.precio_unitario);
+    return sum + producto.cantidad * producto.precio_unitario;
   }, 0);
 
   const data = {
@@ -632,13 +694,17 @@ async function submitPedidoForm(e) {
 
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+      throw new Error(
+        errorData.error || `HTTP error! status: ${response.status}`
+      );
     }
 
     await loadPedidos();
     resetForm(form);
     limpiarProductosDelPedido();
-    alert(id ? "Pedido actualizado correctamente" : "Pedido creado correctamente");
+    alert(
+      id ? "Pedido actualizado correctamente" : "Pedido creado correctamente"
+    );
   } catch (error) {
     console.error("Error al guardar pedido:", error);
     alert(`Error al guardar pedido: ${error.message}`);
@@ -648,20 +714,23 @@ async function submitPedidoForm(e) {
 /* ========== UTILITARIOS ========== */
 function resetForm(form) {
   form.reset();
-  
-  const idFields = form.querySelectorAll('input[type="hidden"]');
-  idFields.forEach(field => field.value = '');
 
-  if (form.id === 'cliente-form') {
-    document.getElementById('cliente-form-title').innerHTML = '<i class="bi bi-person-plus me-2"></i>Agregar Cliente';
+  const idFields = form.querySelectorAll('input[type="hidden"]');
+  idFields.forEach((field) => (field.value = ""));
+
+  if (form.id === "cliente-form") {
+    document.getElementById("cliente-form-title").innerHTML =
+      '<i class="bi bi-person-plus me-2"></i>Agregar Cliente';
     document.getElementById("cliente-password").placeholder = "Contraseña";
     document.getElementById("cliente-password").required = true;
   }
-  if (form.id === 'producto-form') {
-    document.getElementById('producto-form-title').innerHTML = '<i class="bi bi-box-seam-fill me-2"></i>Agregar Producto';
+  if (form.id === "producto-form") {
+    document.getElementById("producto-form-title").innerHTML =
+      '<i class="bi bi-box-seam-fill me-2"></i>Agregar Producto';
   }
-  if (form.id === 'pedido-form') {
-    document.getElementById('pedido-form-title').innerHTML = '<i class="bi bi-cart-plus me-2"></i>Crear Pedido';
+  if (form.id === "pedido-form") {
+    document.getElementById("pedido-form-title").innerHTML =
+      '<i class="bi bi-cart-plus me-2"></i>Crear Pedido';
     limpiarProductosDelPedido();
   }
 }
@@ -682,7 +751,8 @@ document.getElementById("cancelar-edicion-pedido").onclick = function () {
   resetForm(document.getElementById("pedido-form"));
 };
 
-document.getElementById("agregar-producto-al-pedido").onclick = agregarProductoAlPedido;
+document.getElementById("agregar-producto-al-pedido").onclick =
+  agregarProductoAlPedido;
 
 // Funciones globales para eventos onclick
 window.editCliente = editCliente;
@@ -696,16 +766,20 @@ window.eliminarProductoDelPedido = eliminarProductoDelPedido;
 /* ========== INICIALIZACIÓN ========== */
 window.onload = function () {
   console.log("✅ Aplicación cargada correctamente - Diseño Bootstrap");
-  
+
   // Establecer fecha actual por defecto
-  document.getElementById("pedido-fecha").value = new Date().toISOString().split("T")[0];
-  
+  document.getElementById("pedido-fecha").value = new Date()
+    .toISOString()
+    .split("T")[0];
+
   // Cargar datos
   loadClientes();
-  loadProductos().then(() => {
-    loadPedidos();
-  }).catch((error) => {
-    console.error("Error al cargar productos:", error);
-    loadPedidos();
-  });
+  loadProductos()
+    .then(() => {
+      loadPedidos();
+    })
+    .catch((error) => {
+      console.error("Error al cargar productos:", error);
+      loadPedidos();
+    });
 };
