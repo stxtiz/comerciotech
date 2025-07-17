@@ -74,14 +74,32 @@
       <h2>Pedidos</h2>
       <form id="pedido-form">
         <input type="hidden" id="pedido-id" />
+        <label for="pedido-cliente">Cliente:</label>
         <select id="pedido-cliente" required></select>
+
+        <label for="pedido-fecha">Fecha:</label>
         <input type="date" id="pedido-fecha" required />
-        <input type="number" id="pedido-total" placeholder="Total" required />
+
+        <label for="pedido-estado">Estado:</label>
         <input type="text" id="pedido-estado" placeholder="Estado" required />
-        <div id="pedido-productos-wrapper"></div>
+
+        <h3>Productos del Pedido:</h3>
+        <div id="pedido-productos-wrapper">
+          <!-- Los productos se agregarán dinámicamente aquí -->
+        </div>
         <button type="button" id="agregar-producto-al-pedido">
-          Agregar Producto
+          + Agregar Producto
         </button>
+
+        <label for="pedido-total">Total:</label>
+        <input
+          type="number"
+          id="pedido-total"
+          placeholder="Total"
+          step="0.01"
+          readonly
+        />
+
         <button type="submit">Guardar Pedido</button>
         <button type="button" id="cancelar-edicion-pedido">Cancelar</button>
       </form>

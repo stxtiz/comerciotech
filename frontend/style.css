@@ -11,9 +11,15 @@ h2 {
   color: #2c3e50;
 }
 
+h3 {
+  color: #34495e;
+  margin-top: 15px;
+  margin-bottom: 10px;
+}
+
 form {
   background: #fff;
-  padding: 10px;
+  padding: 15px;
   margin-bottom: 20px;
   border-radius: 6px;
   box-shadow: 0 1px 3px #aaa2;
@@ -26,7 +32,51 @@ input,
 select,
 button {
   margin: 3px;
-  padding: 4px;
+  padding: 6px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+label {
+  display: block;
+  margin-top: 8px;
+  margin-bottom: 4px;
+  font-weight: bold;
+  color: #555;
+}
+
+#pedido-form {
+  flex-direction: column;
+}
+
+#pedido-productos-wrapper {
+  margin: 10px 0;
+  padding: 10px;
+  background: #f8f9fa;
+  border-radius: 4px;
+  border: 1px solid #e9ecef;
+}
+
+.producto-item {
+  margin-bottom: 10px;
+}
+
+.producto-item > div {
+  display: grid;
+  grid-template-columns: 1fr 100px 120px 120px auto;
+  gap: 10px;
+  align-items: center;
+  padding: 10px;
+}
+
+.producto-item label {
+  margin-bottom: 2px;
+  font-size: 12px;
+}
+
+.producto-item input,
+.producto-item select {
+  margin: 0;
 }
 
 ul {
