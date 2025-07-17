@@ -10,7 +10,7 @@ app.use(cors());
 app.use(express.json());
 
 mongoose.connect(
-  "mongodb://myUserAdmin:Ventana#123@localhost:27017/comerciotech",
+  "mongodb://myUserAdmin:Ventana%23123@localhost:27017/comerciotech",
   {
     useNewUrlParser: true,
     useUnifiedTopology: true,
